@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	. "github.com/ryutah/realworld-echo/internal/auth"
-	"github.com/ryutah/realworld-echo/internal/xtest"
+	"github.com/ryutah/realworld-echo/internal/xtesting"
 )
 
 func TestAuthToken(t *testing.T) {
@@ -21,7 +21,7 @@ func TestAuthToken(t *testing.T) {
 		t.Error("should be return true")
 	}
 	if diff := cmp.Diff(token, got); diff != "" {
-		t.Errorf(xtest.ErrorMsg.Diff, diff)
+		t.Errorf(xtesting.ErrorMsg.Diff, diff)
 	}
 }
 
@@ -34,6 +34,6 @@ func TestAuthTokenWihtoutSetTOken(t *testing.T) {
 		t.Error("should be return false")
 	}
 	if diff := cmp.Diff(NewAuthToken(""), got); diff != "" {
-		t.Errorf(xtest.ErrorMsg.Diff, diff)
+		t.Errorf(xtesting.ErrorMsg.Diff, diff)
 	}
 }

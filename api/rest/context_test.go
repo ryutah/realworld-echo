@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/labstack/echo/v4"
 	. "github.com/ryutah/realworld-echo/api/rest"
-	"github.com/ryutah/realworld-echo/internal/xtest"
+	"github.com/ryutah/realworld-echo/internal/xtesting"
 )
 
 type dummyEchoContext struct {
@@ -25,7 +25,7 @@ func Test_Context(t *testing.T) {
 	ctx := NewContext(ec)
 	got := EchoContextFromContext(ctx)
 	if diff := cmp.Diff(ec, got); diff != "" {
-		t.Errorf(xtest.ErrorMsg.Diff, diff)
+		t.Errorf(xtesting.ErrorMsg.Diff, diff)
 	}
 }
 
@@ -34,7 +34,7 @@ func Test_Context_ShouldBePanic(t *testing.T) {
 		want := "context has no echo.Context"
 		err := recover()
 		if diff := cmp.Diff(want, err); diff != "" {
-			t.Errorf(xtest.ErrorMsg.Diff, diff)
+			t.Errorf(xtesting.ErrorMsg.Diff, diff)
 		}
 	}()
 

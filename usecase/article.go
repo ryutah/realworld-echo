@@ -5,6 +5,7 @@ import (
 
 	"github.com/ryutah/realworld-echo/domain/model"
 	"github.com/ryutah/realworld-echo/domain/repository"
+	"github.com/ryutah/realworld-echo/internal/xlog"
 )
 
 type ErrorResult struct {
@@ -52,5 +53,6 @@ func NewArticle(getArticle GetArticleOutputPort) *Article {
 }
 
 func (a *Article) Get(ctx context.Context, slutStr string) error {
+	xlog.Info(ctx, "Test!")
 	return a.outputPort.getArticle.Ok(ctx, GetArticleResult{})
 }

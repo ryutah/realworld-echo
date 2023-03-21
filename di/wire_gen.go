@@ -9,24 +9,30 @@ package di
 import (
 	"github.com/google/wire"
 	"github.com/ryutah/realworld-echo/api/rest"
+	"github.com/ryutah/realworld-echo/internal/xtrace"
 	"github.com/ryutah/realworld-echo/usecase"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 // Injectors from wire.go:
 
-func InitializeServer() *rest.Server {
+func InitializeRestExecuter(projectID string) *rest.Extcuter {
 	errorOutputPort := rest.NewErrorOutputPort()
 	getArticleOutputPort := rest.NewGetArticleOutputPort(errorOutputPort)
 	article := usecase.NewArticle(getArticleOutputPort)
 	artcle := rest.NewArticle(article)
 	server := rest.NewServer(artcle)
-	return server
+	sampler := trace.NeverSample()
+	initializer := xtrace.NewGoogleCloudTracingInitializer(projectID, sampler)
+	extcuter := rest.NewExecuter(server, initializer)
+	return extcuter
 }
 
 // wire.go:
 
 var (
-	restSet       = wire.NewSet(rest.NewServer, rest.NewArticle, inputPortSet)
-	outputPortSet = wire.NewSet(rest.NewErrorOutputPort, rest.NewGetArticleOutputPort)
-	inputPortSet  = wire.NewSet(usecase.NewArticle, wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)), outputPortSet)
+	localRestSet        = wire.NewSet(rest.NewServer, rest.NewArticle, localInputPortSet)
+	localInputPortSet   = wire.NewSet(usecase.NewArticle, wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)), localOutputPortSet)
+	localOutputPortSet  = wire.NewSet(rest.NewErrorOutputPort, rest.NewGetArticleOutputPort)
+	traceInitializerSet = wire.NewSet(xtrace.NewGoogleCloudTracingInitializer, trace.NeverSample)
 )

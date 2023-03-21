@@ -6,26 +6,36 @@ package di
 import (
 	"github.com/google/wire"
 	"github.com/ryutah/realworld-echo/api/rest"
+	"github.com/ryutah/realworld-echo/internal/xtrace"
 	"github.com/ryutah/realworld-echo/usecase"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 var (
-	restSet = wire.NewSet(
+	localRestSet = wire.NewSet(
 		rest.NewServer,
 		rest.NewArticle,
-		inputPortSet,
+		localInputPortSet,
 	)
-	outputPortSet = wire.NewSet(
+	localInputPortSet = wire.NewSet(
+		usecase.NewArticle,
+		wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)),
+		localOutputPortSet,
+	)
+	localOutputPortSet = wire.NewSet(
 		rest.NewErrorOutputPort,
 		rest.NewGetArticleOutputPort,
 	)
-	inputPortSet = wire.NewSet(
-		usecase.NewArticle,
-		wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)),
-		outputPortSet,
+	traceInitializerSet = wire.NewSet(
+		xtrace.NewGoogleCloudTracingInitializer,
+		sdktrace.NeverSample,
 	)
 )
 
-func InitializeServer() *rest.Server {
-	panic(wire.Build(restSet))
+func InitializeRestExecuter(projectID string) *rest.Extcuter {
+	panic(wire.Build(
+		rest.NewExecuter,
+		localRestSet,
+		traceInitializerSet,
+	))
 }

@@ -1,4 +1,4 @@
-package xtest
+package xtesting
 
 var ErrorMsg = struct {
 	Diff string

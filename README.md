@@ -9,14 +9,15 @@ go run .
 
 ## Libraries
 
-| lib          | use                            |
-| ------------ | ------------------------------ |
-| zap          | logging                        |
-| echo         | web framework                  |
-| oapi-codegen | schema base OAS code generator |
-| eri          | error utility                  |
-| go-cmp       | test compare                   |
-| wire         | dependency injection           |
+| lib            | use                            |
+| -------------- | ------------------------------ |
+| zap            | logging                        |
+| echo           | web framework                  |
+| oapi-codegen   | schema base OAS code generator |
+| eri            | error utility                  |
+| go-cmp         | test compare                   |
+| wire           | dependency injection           |
+| opentelemetory | tracing                        |
 
 ## About Component
 

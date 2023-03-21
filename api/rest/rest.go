@@ -12,35 +12,56 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/ryutah/realworld-echo/api/rest/gen"
+	"github.com/ryutah/realworld-echo/api/rest/middleware"
+	"github.com/ryutah/realworld-echo/internal/xtrace"
+	"go.uber.org/multierr"
 )
 
-func Start(s *Server) {
-	e := echo.New()
+type Extcuter struct {
+	traceInitializer xtrace.Initializer
+	server           *Server
+}
 
-	gen.RegisterHandlers(e, s)
+func NewExecuter(server *Server, traceInitializer xtrace.Initializer) *Extcuter {
+	return &Extcuter{
+		server:           server,
+		traceInitializer: traceInitializer,
+	}
+}
+
+func (e *Extcuter) Start() {
+	ec := echo.New()
+	ec.Use(middleware.WithLogger)
+
+	gen.RegisterHandlers(ec, e.server)
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	if err := startServerwithGracefulShutdown(fmt.Sprintf(":%s", port), e, func() {
+	if err := e.startServerwithGracefulShutdown(fmt.Sprintf(":%s", port), ec, func() {
 		log.Println("Server shutdown")
 	}); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func startServerwithGracefulShutdown(addr string, h http.Handler, cleanFunc func()) error {
+func (e *Extcuter) startServerwithGracefulShutdown(addr string, h http.Handler, cleanFunc func()) error {
+	traceHandler, traceFinish, err := e.traceInitializer.HandlerWithTracing(h)
+	if err != nil {
+		return fmt.Errorf("failed to generate trace: %w", err)
+	}
+
 	srv := &http.Server{
-		Handler: h,
+		Handler: traceHandler,
 		Addr:    addr,
 	}
 
 	errChan := make(chan error)
 	go func() {
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			errChan <- err
+			errChan <- fmt.Errorf("failed to listen server: %w ", err)
 		}
 	}()
 
@@ -55,8 +76,18 @@ func startServerwithGracefulShutdown(addr string, h http.Handler, cleanFunc func
 		if cleanFunc != nil {
 			cleanFunc()
 		}
-		errChan <- srv.Shutdown(ctx)
+
+		if e := srv.Shutdown(ctx); e != nil {
+			errChan <- fmt.Errorf("failed to shutdown server: %w", err)
+		}
+		if err := traceFinish(ctx); err != nil {
+			errChan <- fmt.Errorf("failed to finish tracing: %w", err)
+		}
+		close(errChan)
 	}()
 
-	return <-errChan
+	for e := range errChan {
+		multierr.Append(err, e)
+	}
+	return err
 }
