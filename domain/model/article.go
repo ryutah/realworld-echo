@@ -11,7 +11,7 @@ type Article struct {
 	Title       premitive.Title
 	Description premitive.Description
 	Body        premitive.LongBody
-	Author      premitive.Author
+	Author      *User
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }

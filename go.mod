@@ -5,6 +5,8 @@ go 1.20
 require (
 	github.com/deepmap/oapi-codegen v1.12.4
 	github.com/getkin/kin-openapi v0.115.0
+	github.com/google/go-cmp v0.5.9
+	github.com/google/wire v0.5.0
 	github.com/labstack/echo/v4 v4.10.2
 )
 
@@ -21,7 +23,6 @@ require (
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/perimeterx/marshmallow v1.1.4 // indirect
-	github.com/rotisserie/eris v0.5.4 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
