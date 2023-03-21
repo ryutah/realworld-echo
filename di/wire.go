@@ -13,13 +13,13 @@ var (
 	restSet = wire.NewSet(
 		rest.NewServer,
 		rest.NewArticle,
-		usecaseSet,
+		inputPortSet,
 	)
 	outputPortSet = wire.NewSet(
 		rest.NewErrorOutputPort,
 		rest.NewGetArticleOutputPort,
 	)
-	usecaseSet = wire.NewSet(
+	inputPortSet = wire.NewSet(
 		usecase.NewArticle,
 		wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)),
 		outputPortSet,

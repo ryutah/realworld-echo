@@ -26,7 +26,7 @@ func InitializeServer() *rest.Server {
 // wire.go:
 
 var (
-	restSet       = wire.NewSet(rest.NewServer, rest.NewArticle, usecaseSet)
+	restSet       = wire.NewSet(rest.NewServer, rest.NewArticle, inputPortSet)
 	outputPortSet = wire.NewSet(rest.NewErrorOutputPort, rest.NewGetArticleOutputPort)
-	usecaseSet    = wire.NewSet(usecase.NewArticle, wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)), outputPortSet)
+	inputPortSet  = wire.NewSet(usecase.NewArticle, wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)), outputPortSet)
 )
