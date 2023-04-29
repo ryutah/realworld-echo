@@ -9,16 +9,16 @@ go run .
 
 ## Libraries
 
-| lib            | use                            |
-| -------------- | ------------------------------ |
-| zap            | logging                        |
-| echo           | web framework                  |
-| oapi-codegen   | schema base OAS code generator |
-| eri            | error utility                  |
-| go-cmp         | test compare                   |
-| wire           | dependency injection           |
-| opentelemetory | tracing                        |
-| gomock         | mocking                        |
+| lib                                                                                   | use                            |
+| ------------------------------------------------------------------------------------- | ------------------------------ |
+| [uber-go/zap](https://github.com/uber-go/zap)                                         | logging                        |
+| [labstack/echo](https://github.com/labstack/echo)                                     | web framework                  |
+| [deepmap/oapi-codegen](https://github.com/deepmap/oapi-codegen)                       | schema base OAS code generator |
+| [cockroachdb/errors](https://github.com/cockroachdb/errors)                           | error utility                  |
+| [google/go-cmp](https://github.com/google/go-cmp)                                     | test compare                   |
+| [google/wire](https://github.com/google/wire)                                         | dependency injection           |
+| [open-telemetry/opentelemetry-go](https://github.com/open-telemetry/opentelemetry-go) | tracing                        |
+| [golang/mock](https://github.com/golang/mock)                                         | mocking                        |
 
 ## About Component
 
