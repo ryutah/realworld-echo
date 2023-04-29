@@ -13,7 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/ryutah/realworld-echo/api/rest/gen"
 	"github.com/ryutah/realworld-echo/api/rest/middleware"
-	"github.com/ryutah/realworld-echo/internal/xtrace"
+	"github.com/ryutah/realworld-echo/pkg/xtrace"
 	"go.uber.org/multierr"
 )
 

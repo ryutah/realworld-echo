@@ -6,6 +6,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type ErrorOutputPort = errorOutputPort
+
 func NewContext(c echo.Context) context.Context {
 	return newContext(c)
 }

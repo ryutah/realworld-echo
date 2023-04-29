@@ -3,7 +3,7 @@ package middleware
 import (
 	gcppropagator "github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
 	"github.com/labstack/echo/v4"
-	"github.com/ryutah/realworld-echo/internal/xlog"
+	"github.com/ryutah/realworld-echo/pkg/xlog"
 	"go.uber.org/zap"
 )
 

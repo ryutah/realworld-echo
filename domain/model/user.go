@@ -2,7 +2,10 @@ package model
 
 import "github.com/ryutah/realworld-echo/domain/premitive"
 
+type UserID string
+
 type User struct {
+	ID      UserID
 	Account *Account
 	Profile *Profile
 }

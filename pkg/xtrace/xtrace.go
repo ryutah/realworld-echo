@@ -2,9 +2,9 @@ package xtrace
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
+	"github.com/cockroachdb/errors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
@@ -39,7 +39,7 @@ func NewGoogleCloudTracingInitializer(projectID string, sampler sdktrace.Sampler
 func (g *googleCloudTracingInitializer) HandlerWithTracing(h http.Handler) (http.Handler, FinishTraceFunc, error) {
 	exporter, err := stdouttrace.New()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate exporter: %w", err)
+		return nil, nil, errors.Wrap(err, "failed to generate exporter")
 	}
 
 	tp := sdktrace.NewTracerProvider(
@@ -59,7 +59,8 @@ func (g *googleCloudTracingInitializer) HandlerWithTracing(h http.Handler) (http
 	}, nil
 }
 
-func AddSpan(ctx context.Context) {
+func AddSpan(ctx context.Context, name string) trace.Span {
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("aaaa")
+	span.AddEvent(name)
+	return span
 }

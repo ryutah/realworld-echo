@@ -15,6 +15,10 @@ func NewArticle() repository.Article {
 	return &Article{}
 }
 
+func (a *Article) GenerateID(ctx context.Context) (model.ArticleID, error) {
+	return "", nil
+}
+
 func (a *Article) Get(_ context.Context, slug premitive.Slug) (*model.Article, error) {
 	return &model.Article{
 		Slug:        slug,

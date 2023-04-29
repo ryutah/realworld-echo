@@ -1,0 +1,67 @@
+@startuml
+
+skinparam class {
+  BackgroundColor<<Entity>> pink
+  BackgroundColor<<VO>> palegreen
+  BackgroundColor<<Service>> cyan
+}
+hide circle
+
+namespace article_context {
+  class Article<<Entity>> {
+    Profile author
+    Slug slug
+    Title title
+    LongText description*
+    LongText body*
+    List<Tag> tagList
+    Time createdAt*
+    Time updatedAt*
+    boolean favorited*
+    Count favoritesCount*
+  }
+
+  class Profile<<VO>> {
+    UserID id
+    Username username
+    LongText bio
+    URL image
+  }
+
+  Article *-left- Profile
+  Article -right- Tag
+
+  class AuthService<<Service>> {
+    +Profile authorize(UserID)
+    +Profile getProfile(UserID)
+  }
+
+  class Tag<<Entity>> {
+    Tagname name
+  }
+}
+
+article_context.Profile -- authentication_context.User
+article_context.AuthService --> authentication_context.User
+
+namespace authentication_context {
+  class User<<Entity>> {
+    UserID id
+  }
+
+  class Account<<Entity>> {
+    Username username
+    Email email
+    SecurePassword password
+  }
+
+  class Profile<<VO>> {
+    LongText bio
+    URL image
+  }
+
+  User *-- Account
+  User *-- Profile
+}
+
+@enduml

@@ -18,6 +18,7 @@ go run .
 | go-cmp         | test compare                   |
 | wire           | dependency injection           |
 | opentelemetory | tracing                        |
+| gomock         | mocking                        |
 
 ## About Component
 
@@ -35,4 +36,18 @@ classDiagram
   api --> usecase : call
   usecase --> domain : call
   domain <|-- infrastructure : implements
+```
+
+## Testing
+
+1. Should be cover 100% covarage
+1. Should be separate test package as `xxx_test`
+   - because it should be test how to use other package
+
+## Tips
+
+### Only first time
+
+```console
+go get -u github.com/golang/mock/mockgen/model github.com/google/wire/cmd/wire@v0.5.0
 ```

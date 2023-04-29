@@ -5,26 +5,24 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
-	"github.com/labstack/echo/v4"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	. "github.com/ryutah/realworld-echo/api/rest"
-	"github.com/ryutah/realworld-echo/internal/xtesting"
+	"github.com/ryutah/realworld-echo/pkg/xtesting"
 )
 
-type dummyEchoContext struct {
-	echo.Context
-}
-
-func (d *dummyEchoContext) Request() *http.Request {
-	dummyReq, _ := http.NewRequest(http.MethodGet, "/", nil)
-	return dummyReq
-}
-
 func Test_Context(t *testing.T) {
-	ec := new(dummyEchoContext)
-	ctx := NewContext(ec)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ctxMock := NewMockContext(ctrl)
+	ctxMock.EXPECT().Request().Times(1).Return(new(http.Request))
+
+	ctx := NewContext(ctxMock)
 	got := EchoContextFromContext(ctx)
-	if diff := cmp.Diff(ec, got); diff != "" {
+
+	if diff := cmp.Diff(ctxMock, got, cmpopts.IgnoreUnexported(MockContext{})); diff != "" {
 		t.Errorf(xtesting.ErrorMsg.Diff, diff)
 	}
 }
@@ -37,11 +35,6 @@ func Test_Context_ShouldBePanic(t *testing.T) {
 			t.Errorf(xtesting.ErrorMsg.Diff, diff)
 		}
 	}()
-
-	type dummyEchoContext struct {
-		echo.Context
-	}
-
 	ctx := context.Background()
 	_ = EchoContextFromContext(ctx)
 }

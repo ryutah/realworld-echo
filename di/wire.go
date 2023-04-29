@@ -6,7 +6,7 @@ package di
 import (
 	"github.com/google/wire"
 	"github.com/ryutah/realworld-echo/api/rest"
-	"github.com/ryutah/realworld-echo/internal/xtrace"
+	"github.com/ryutah/realworld-echo/pkg/xtrace"
 	"github.com/ryutah/realworld-echo/usecase"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )

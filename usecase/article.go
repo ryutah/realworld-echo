@@ -5,26 +5,15 @@ import (
 
 	"github.com/ryutah/realworld-echo/domain/model"
 	"github.com/ryutah/realworld-echo/domain/repository"
-	"github.com/ryutah/realworld-echo/internal/xlog"
+	"github.com/ryutah/realworld-echo/pkg/xlog"
 )
 
-type ErrorResult struct {
-	Message      string
-	Descriptions []string
-}
-
-type ErrorOutputPort interface {
-	InternalError(context.Context, ErrorResult) error
-	NotFound(context.Context, ErrorResult) error
+type OKOutputPort[T any] interface {
+	OK(context.Context, T) error
 }
 
 type GetArticleInputPort interface {
 	Get(ctx context.Context, slugStr string) error
-}
-
-type GetArticleOutputPort interface {
-	ErrorOutputPort
-	Ok(context.Context, GetArticleResult) error
 }
 
 type GetArticleResult struct {
@@ -33,7 +22,8 @@ type GetArticleResult struct {
 
 type Article struct {
 	outputPort struct {
-		getArticle GetArticleOutputPort
+		getArticle OKOutputPort[GetArticleResult]
+		errors     ErrorOutputPort
 	}
 	repository struct {
 		article repository.Article
@@ -42,17 +32,19 @@ type Article struct {
 
 var _ GetArticleInputPort = (*Article)(nil)
 
-func NewArticle(getArticle GetArticleOutputPort) *Article {
+func NewArticle(okPort OKOutputPort[GetArticleResult], errPort ErrorOutputPort) *Article {
 	return &Article{
 		outputPort: struct {
-			getArticle GetArticleOutputPort
+			getArticle OKOutputPort[GetArticleResult]
+			errors     ErrorOutputPort
 		}{
-			getArticle: getArticle,
+			getArticle: okPort,
+			errors:     errPort,
 		},
 	}
 }
 
 func (a *Article) Get(ctx context.Context, slutStr string) error {
 	xlog.Info(ctx, "Test!")
-	return a.outputPort.getArticle.Ok(ctx, GetArticleResult{})
+	return a.outputPort.getArticle.OK(ctx, GetArticleResult{})
 }

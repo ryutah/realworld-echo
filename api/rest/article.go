@@ -10,17 +10,13 @@ import (
 	"github.com/ryutah/realworld-echo/usecase"
 )
 
-type getArticleOutputPort struct {
-	usecase.ErrorOutputPort
+type getArticleOutputPort struct{}
+
+func NewGetArticleOutputPort(e usecase.ErrorOutputPort) usecase.OKOutputPort[usecase.GetArticleResult] {
+	return &getArticleOutputPort{}
 }
 
-func NewGetArticleOutputPort(e usecase.ErrorOutputPort) usecase.GetArticleOutputPort {
-	return &getArticleOutputPort{
-		ErrorOutputPort: e,
-	}
-}
-
-func (g *getArticleOutputPort) Ok(ctx context.Context, _ usecase.GetArticleResult) error {
+func (g *getArticleOutputPort) OK(ctx context.Context, _ usecase.GetArticleResult) error {
 	c := echoContextFromContext(ctx)
 	return c.JSON(http.StatusOK, gen.SingleArticleResponse{
 		Article: gen.Article{

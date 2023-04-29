@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	. "github.com/ryutah/realworld-echo/internal/auth"
-	"github.com/ryutah/realworld-echo/internal/xtesting"
+	. "github.com/ryutah/realworld-echo/pkg/auth"
+	"github.com/ryutah/realworld-echo/pkg/xtesting"
 )
 
 func TestAuthToken(t *testing.T) {

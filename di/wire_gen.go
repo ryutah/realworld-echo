@@ -9,7 +9,7 @@ package di
 import (
 	"github.com/google/wire"
 	"github.com/ryutah/realworld-echo/api/rest"
-	"github.com/ryutah/realworld-echo/internal/xtrace"
+	"github.com/ryutah/realworld-echo/pkg/xtrace"
 	"github.com/ryutah/realworld-echo/usecase"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
@@ -18,8 +18,8 @@ import (
 
 func InitializeRestExecuter(projectID string) *rest.Extcuter {
 	errorOutputPort := rest.NewErrorOutputPort()
-	getArticleOutputPort := rest.NewGetArticleOutputPort(errorOutputPort)
-	article := usecase.NewArticle(getArticleOutputPort)
+	okOutputPort := rest.NewGetArticleOutputPort(errorOutputPort)
+	article := usecase.NewArticle(okOutputPort, errorOutputPort)
 	artcle := rest.NewArticle(article)
 	server := rest.NewServer(artcle)
 	sampler := trace.NeverSample()
