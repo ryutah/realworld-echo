@@ -23,19 +23,9 @@ func Error(ctx context.Context, msg string, fields ...zap.Field) {
 	logger.Error(msg, fields...)
 }
 
-func Critical(ctx context.Context, msg string, fields ...zap.Field) {
-	logger := LoggerFromContext(ctx)
-	logger.DPanic(msg, fields...)
-}
-
 func Alert(ctx context.Context, msg string, fields ...zap.Field) {
 	logger := LoggerFromContext(ctx)
-	logger.Panic(msg, fields...)
-}
-
-func Emergency(ctx context.Context, msg string, fields ...zap.Field) {
-	logger := LoggerFromContext(ctx)
-	logger.Fatal(msg, fields...)
+	logger.Error(msg, fields...)
 }
 
 type logKey struct{}
@@ -56,15 +46,16 @@ func ContextWithLogger(ctx context.Context, logger *zap.Logger) context.Context 
 	return context.WithValue(ctx, logKey{}, logger)
 }
 
+func ContextWithLogFields(ctx context.Context, fields ...zap.Field) context.Context {
+	return ContextWithLogger(ctx, LoggerFromContext(ctx).With(fields...))
+}
+
 // see: https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity
 var logLevelSeverity = map[zapcore.Level]string{
-	zapcore.DebugLevel:  "DEBUG",
-	zapcore.InfoLevel:   "INFO",
-	zapcore.WarnLevel:   "WARNING",
-	zapcore.ErrorLevel:  "ERROR",
-	zapcore.DPanicLevel: "CRITICAL",
-	zapcore.PanicLevel:  "ALERT",
-	zapcore.FatalLevel:  "EMERGENCY",
+	zapcore.DebugLevel: "DEBUG",
+	zapcore.InfoLevel:  "INFO",
+	zapcore.WarnLevel:  "WARNING",
+	zapcore.ErrorLevel: "ERROR",
 }
 
 func encodeLevel(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
@@ -83,6 +74,7 @@ func NewLogger() *zap.Logger {
 	cfg := zap.NewProductionConfig()
 	cfg.Level.SetLevel(zap.DebugLevel)
 	cfg.EncoderConfig = encoderConfig
+	cfg.DisableStacktrace = true
 
 	logger, err := cfg.Build()
 	if err != nil {

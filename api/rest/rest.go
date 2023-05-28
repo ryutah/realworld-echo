@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/ryutah/realworld-echo/api/rest/gen"
 	"github.com/ryutah/realworld-echo/api/rest/middleware"
+	"github.com/ryutah/realworld-echo/config"
 	"github.com/ryutah/realworld-echo/pkg/xtrace"
 	"go.uber.org/multierr"
 )
@@ -35,12 +36,7 @@ func (e *Extcuter) Start() {
 
 	gen.RegisterHandlersWithBaseURL(ec, e.server, "/api")
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	if err := e.startServerwithGracefulShutdown(fmt.Sprintf(":%s", port), ec, func() {
+	if err := e.startServerwithGracefulShutdown(fmt.Sprintf(":%s", config.GetConfig().Port), ec, func() {
 		log.Println("Server shutdown")
 	}); err != nil {
 		log.Fatal(err)

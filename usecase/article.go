@@ -3,9 +3,13 @@ package usecase
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
 	"github.com/ryutah/realworld-echo/domain/model"
 	"github.com/ryutah/realworld-echo/domain/repository"
+	"github.com/ryutah/realworld-echo/pkg/xerrorreport"
 	"github.com/ryutah/realworld-echo/pkg/xlog"
+	"github.com/ryutah/realworld-echo/pkg/xtrace"
+	"go.uber.org/zap"
 )
 
 type OKOutputPort[T any] interface {
@@ -44,7 +48,21 @@ func NewArticle(okPort OKOutputPort[GetArticleResult], errPort ErrorOutputPort) 
 	}
 }
 
-func (a *Article) Get(ctx context.Context, slutStr string) error {
-	xlog.Info(ctx, "Test!")
+func (a *Article) Get(ctx context.Context, slugStr string) error {
+	ctx, span := xtrace.StartSpan(ctx)
+	defer span.End()
+	ctx = xlog.ContextWithLogFields(ctx, zap.String("slug", slugStr))
+
+	xlog.Info(ctx, "Test")
+	err := errors.New("test error")
+	file, line, fn, _ := errors.GetOneLineSource(err)
+	xerrorreport.NewErrorReporter("sample_service", "v1").Report(ctx, err, xerrorreport.ErrorContext{
+		User: "sample_user",
+		Location: xerrorreport.Location{
+			File:     file,
+			Line:     line,
+			Function: fn,
+		},
+	})
 	return a.outputPort.getArticle.OK(ctx, GetArticleResult{})
 }

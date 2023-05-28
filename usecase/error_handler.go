@@ -1,6 +1,8 @@
 package usecase
 
-import "context"
+import (
+	"context"
+)
 
 type ErrorResult struct {
 	Message      string
@@ -14,6 +16,13 @@ type ErrorOutputPort interface {
 
 type errorHandler struct {
 	outputPort ErrorOutputPort
+}
+
+func (e *errorHandler) internalError(ctx context.Context, err error) error {
+	return e.outputPort.InternalError(ctx, ErrorResult{
+		Message:      "",
+		Descriptions: []string{},
+	})
 }
 
 func (e *errorHandler) handleError(ctx context.Context, err error) error {

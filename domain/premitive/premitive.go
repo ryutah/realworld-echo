@@ -1,6 +1,7 @@
 package premitive
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 
@@ -51,6 +52,7 @@ func NewEmail(s string) (Email, error) {
 		s,
 		func() Email { return Email(s) },
 		email(),
+		max(254),
 	)
 }
 
@@ -68,6 +70,10 @@ func email() string {
 
 func url() string {
 	return "url"
+}
+
+func max(m int) string {
+	return fmt.Sprintf("max=%d", m)
 }
 
 func withValidate[Arg, Ret any](value Arg, fn func() Ret, rules ...string) (r Ret, _ error) {

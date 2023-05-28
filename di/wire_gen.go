@@ -22,7 +22,7 @@ func InitializeLocalRestExecuter() *rest.Extcuter {
 	article := usecase.NewArticle(okOutputPort, errorOutputPort)
 	artcle := rest.NewArticle(article)
 	server := rest.NewServer(artcle)
-	sampler := trace.AlwaysSample()
+	sampler := trace.NeverSample()
 	initializer := xtrace.NewStdoutTracingInitializer(sampler)
 	extcuter := rest.NewExecuter(server, initializer)
 	return extcuter
@@ -48,6 +48,6 @@ var (
 	outputPortSet = wire.NewSet(rest.NewErrorOutputPort, rest.NewGetArticleOutputPort)
 )
 
-var localTraceInitializerSet = wire.NewSet(xtrace.NewStdoutTracingInitializer, trace.AlwaysSample)
+var localTraceInitializerSet = wire.NewSet(xtrace.NewStdoutTracingInitializer, trace.NeverSample)
 
 var gcpTraceInitializerSet = wire.NewSet(xtrace.NewGoogleCloudTracingInitializer, trace.AlwaysSample)
