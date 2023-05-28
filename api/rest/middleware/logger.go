@@ -1,8 +1,11 @@
 package middleware
 
 import (
+	"fmt"
+
 	gcppropagator "github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
 	"github.com/labstack/echo/v4"
+	"github.com/ryutah/realworld-echo/config"
 	"github.com/ryutah/realworld-echo/pkg/xlog"
 	"go.uber.org/zap"
 )
@@ -14,8 +17,9 @@ func WithLogger(next echo.HandlerFunc) echo.HandlerFunc {
 		req := c.Request()
 		spanCtx, err := gcppropagator.SpanContextFromRequest(req)
 		if err == nil {
+			traceID := fmt.Sprintf("projects/%s/traces/%s", config.GetConfig().ProjectID, spanCtx.TraceID().String())
 			logger = logger.
-				With(zap.String("logging.googleapis.com/trace", spanCtx.TraceID().String())).
+				With(zap.String("logging.googleapis.com/trace", traceID)).
 				With(zap.String("logging.googleapis.com/spanId", spanCtx.SpanID().String())).
 				With(zap.Bool("logging.googleapis.com/trace_sampled", spanCtx.IsSampled()))
 		}

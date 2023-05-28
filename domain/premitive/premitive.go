@@ -70,7 +70,7 @@ func url() string {
 	return "url"
 }
 
-func withValidate[Arg, Ret any](value Arg, fn func() Ret, rules ...string) (r Ret, err error) {
+func withValidate[Arg, Ret any](value Arg, fn func() Ret, rules ...string) (r Ret, _ error) {
 	if err := getValidate().Var(value, strings.Join(rules, ",")); err != nil {
 		return r, newValidationError(1, err)
 	}

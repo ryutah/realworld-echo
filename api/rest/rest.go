@@ -33,7 +33,7 @@ func (e *Extcuter) Start() {
 	ec := echo.New()
 	ec.Use(middleware.WithLogger)
 
-	gen.RegisterHandlers(ec, e.server)
+	gen.RegisterHandlersWithBaseURL(ec, e.server, "/api")
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -54,8 +54,9 @@ func (e *Extcuter) startServerwithGracefulShutdown(addr string, h http.Handler, 
 	}
 
 	srv := &http.Server{
-		Handler: traceHandler,
-		Addr:    addr,
+		Handler:           traceHandler,
+		Addr:              addr,
+		ReadHeaderTimeout: 60 * time.Second,
 	}
 
 	errChan := make(chan error)
@@ -87,7 +88,7 @@ func (e *Extcuter) startServerwithGracefulShutdown(addr string, h http.Handler, 
 	}()
 
 	for e := range errChan {
-		multierr.Append(err, e)
+		err = multierr.Append(err, e)
 	}
 	return err
 }

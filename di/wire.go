@@ -12,30 +12,45 @@ import (
 )
 
 var (
-	localRestSet = wire.NewSet(
+	restSet = wire.NewSet(
 		rest.NewServer,
 		rest.NewArticle,
-		localInputPortSet,
+		inputPortSet,
 	)
-	localInputPortSet = wire.NewSet(
+	inputPortSet = wire.NewSet(
 		usecase.NewArticle,
 		wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)),
-		localOutputPortSet,
+		outputPortSet,
 	)
-	localOutputPortSet = wire.NewSet(
+	outputPortSet = wire.NewSet(
 		rest.NewErrorOutputPort,
 		rest.NewGetArticleOutputPort,
 	)
-	traceInitializerSet = wire.NewSet(
-		xtrace.NewGoogleCloudTracingInitializer,
-		sdktrace.NeverSample,
-	)
 )
 
-func InitializeRestExecuter(projectID string) *rest.Extcuter {
+var localTraceInitializerSet = wire.NewSet(
+	xtrace.NewStdoutTracingInitializer,
+	// disaable sampling because it is too noisy for local development
+	sdktrace.NeverSample,
+)
+
+var gcpTraceInitializerSet = wire.NewSet(
+	xtrace.NewGoogleCloudTracingInitializer,
+	sdktrace.AlwaysSample,
+)
+
+func InitializeLocalRestExecuter() *rest.Extcuter {
 	panic(wire.Build(
 		rest.NewExecuter,
-		localRestSet,
-		traceInitializerSet,
+		restSet,
+		localTraceInitializerSet,
+	))
+}
+
+func InitializeAppEngineRestExecuter(projectID string) *rest.Extcuter {
+	panic(wire.Build(
+		rest.NewExecuter,
+		restSet,
+		gcpTraceInitializerSet,
 	))
 }

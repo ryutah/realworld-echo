@@ -16,13 +16,25 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeRestExecuter(projectID string) *rest.Extcuter {
+func InitializeLocalRestExecuter() *rest.Extcuter {
 	errorOutputPort := rest.NewErrorOutputPort()
 	okOutputPort := rest.NewGetArticleOutputPort(errorOutputPort)
 	article := usecase.NewArticle(okOutputPort, errorOutputPort)
 	artcle := rest.NewArticle(article)
 	server := rest.NewServer(artcle)
-	sampler := trace.NeverSample()
+	sampler := trace.AlwaysSample()
+	initializer := xtrace.NewStdoutTracingInitializer(sampler)
+	extcuter := rest.NewExecuter(server, initializer)
+	return extcuter
+}
+
+func InitializeAppEngineRestExecuter(projectID string) *rest.Extcuter {
+	errorOutputPort := rest.NewErrorOutputPort()
+	okOutputPort := rest.NewGetArticleOutputPort(errorOutputPort)
+	article := usecase.NewArticle(okOutputPort, errorOutputPort)
+	artcle := rest.NewArticle(article)
+	server := rest.NewServer(artcle)
+	sampler := trace.AlwaysSample()
 	initializer := xtrace.NewGoogleCloudTracingInitializer(projectID, sampler)
 	extcuter := rest.NewExecuter(server, initializer)
 	return extcuter
@@ -31,8 +43,11 @@ func InitializeRestExecuter(projectID string) *rest.Extcuter {
 // wire.go:
 
 var (
-	localRestSet        = wire.NewSet(rest.NewServer, rest.NewArticle, localInputPortSet)
-	localInputPortSet   = wire.NewSet(usecase.NewArticle, wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)), localOutputPortSet)
-	localOutputPortSet  = wire.NewSet(rest.NewErrorOutputPort, rest.NewGetArticleOutputPort)
-	traceInitializerSet = wire.NewSet(xtrace.NewGoogleCloudTracingInitializer, trace.NeverSample)
+	restSet       = wire.NewSet(rest.NewServer, rest.NewArticle, inputPortSet)
+	inputPortSet  = wire.NewSet(usecase.NewArticle, wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)), outputPortSet)
+	outputPortSet = wire.NewSet(rest.NewErrorOutputPort, rest.NewGetArticleOutputPort)
 )
+
+var localTraceInitializerSet = wire.NewSet(xtrace.NewStdoutTracingInitializer, trace.AlwaysSample)
+
+var gcpTraceInitializerSet = wire.NewSet(xtrace.NewGoogleCloudTracingInitializer, trace.AlwaysSample)

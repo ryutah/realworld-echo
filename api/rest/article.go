@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/ryutah/realworld-echo/api/rest/gen"
+	"github.com/ryutah/realworld-echo/pkg/xtrace"
 	"github.com/ryutah/realworld-echo/usecase"
 )
 
@@ -57,5 +58,7 @@ func NewArticle(getArticle usecase.GetArticleInputPort) *Artcle {
 
 func (a *Artcle) GetArticle(c echo.Context, slug string) error {
 	ctx := newContext(c)
+	ctx, span := xtrace.StartSpan(ctx)
+	defer span.End()
 	return a.inputPort.getArticle.Get(ctx, slug)
 }
