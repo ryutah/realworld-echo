@@ -7,10 +7,10 @@ import (
 
 type Server struct {
 	gen.ServerInterface
-	article *Artcle
+	article *Article
 }
 
-func NewServer(article *Artcle) *Server {
+func NewServer(article *Article) *Server {
 	return &Server{
 		article: article,
 	}

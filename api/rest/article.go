@@ -40,14 +40,14 @@ func (g *getArticleOutputPort) OK(ctx context.Context, _ usecase.GetArticleResul
 	})
 }
 
-type Artcle struct {
+type Article struct {
 	inputPort struct {
 		getArticle usecase.GetArticleInputPort
 	}
 }
 
-func NewArticle(getArticle usecase.GetArticleInputPort) *Artcle {
-	return &Artcle{
+func NewArticle(getArticle usecase.GetArticleInputPort) *Article {
+	return &Article{
 		inputPort: struct {
 			getArticle usecase.GetArticleInputPort
 		}{
@@ -56,7 +56,7 @@ func NewArticle(getArticle usecase.GetArticleInputPort) *Artcle {
 	}
 }
 
-func (a *Artcle) GetArticle(c echo.Context, slug string) error {
+func (a *Article) GetArticle(c echo.Context, slug string) error {
 	ctx := newContext(c)
 	ctx, span := xtrace.StartSpan(ctx)
 	defer span.End()
