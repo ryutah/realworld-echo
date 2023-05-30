@@ -1,6 +1,10 @@
 package config
 
-import "github.com/kelseyhightower/envconfig"
+import (
+	"github.com/kelseyhightower/envconfig"
+)
+
+const envPrefix = "realworld"
 
 type Config struct {
 	Port      string `envconfig:"PORT" default:"8080"`
@@ -10,7 +14,7 @@ type Config struct {
 var _config Config
 
 func init() {
-	if err := envconfig.Process("myapp", &_config); err != nil {
+	if err := envconfig.Process(envPrefix, &_config); err != nil {
 		panic(err)
 	}
 }
