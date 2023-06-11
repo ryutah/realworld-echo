@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/ryutah/realworld-echo/realworld-api/config"
 	"github.com/ryutah/realworld-echo/realworld-api/di"
+	"github.com/ryutah/realworld-echo/realworld-api/pkg/xerrorreport"
+	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtrace"
 
 	"cloud.google.com/go/profiler"
 )
@@ -15,6 +17,10 @@ func main() {
 		panic(err)
 	}
 
-	e := di.InitializeAppEngineRestExecuter(config.GetConfig().ProjectID)
+	e := di.InitializeAppEngineRestExecuter(
+		xtrace.ProjectID(config.GetConfig().ProjectID),
+		xerrorreport.Service("my_service"),
+		xerrorreport.Version("v1"),
+	)
 	e.Start()
 }

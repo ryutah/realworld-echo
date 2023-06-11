@@ -23,7 +23,7 @@ func Test_Context(t *testing.T) {
 	got := EchoContextFromContext(ctx)
 
 	if diff := cmp.Diff(ctxMock, got, cmpopts.IgnoreUnexported(MockContext{})); diff != "" {
-		t.Errorf(xtesting.ErrorMsg.Diff, diff)
+		xtesting.PrintDiff(t, "NewContext", diff)
 	}
 }
 
@@ -32,7 +32,7 @@ func Test_Context_ShouldBePanic(t *testing.T) {
 		want := "context has no echo.Context"
 		err := recover()
 		if diff := cmp.Diff(want, err); diff != "" {
-			t.Errorf(xtesting.ErrorMsg.Diff, diff)
+			xtesting.PrintDiff(t, "panic", diff)
 		}
 	}()
 	ctx := context.Background()

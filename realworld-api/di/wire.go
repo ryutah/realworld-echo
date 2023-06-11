@@ -6,6 +6,7 @@ package di
 import (
 	"github.com/google/wire"
 	"github.com/ryutah/realworld-echo/realworld-api/api/rest"
+	"github.com/ryutah/realworld-echo/realworld-api/pkg/xerrorreport"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtrace"
 	"github.com/ryutah/realworld-echo/realworld-api/usecase"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -19,6 +20,7 @@ var (
 	)
 	inputPortSet = wire.NewSet(
 		usecase.NewArticle,
+		usecase.NewErrorHandler,
 		wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)),
 		outputPortSet,
 	)
@@ -32,14 +34,18 @@ var localTraceInitializerSet = wire.NewSet(
 	xtrace.NewStdoutTracingInitializer,
 	// disaable sampling because it is too noisy for local development
 	sdktrace.NeverSample,
+	xerrorreport.NewErrorReporter,
+	wire.Bind(new(usecase.ErrorReporter), new(*xerrorreport.ErrorReporter)),
 )
 
 var gcpTraceInitializerSet = wire.NewSet(
 	xtrace.NewGoogleCloudTracingInitializer,
 	sdktrace.AlwaysSample,
+	xerrorreport.NewErrorReporter,
+	wire.Bind(new(usecase.ErrorReporter), new(*xerrorreport.ErrorReporter)),
 )
 
-func InitializeLocalRestExecuter() *rest.Extcuter {
+func InitializeLocalRestExecuter(service xerrorreport.Service, version xerrorreport.Version) *rest.Extcuter {
 	panic(wire.Build(
 		rest.NewExecuter,
 		restSet,
@@ -47,7 +53,15 @@ func InitializeLocalRestExecuter() *rest.Extcuter {
 	))
 }
 
-func InitializeAppEngineRestExecuter(projectID string) *rest.Extcuter {
+func InitializeAppEngineRestExecuter(projectID xtrace.ProjectID, service xerrorreport.Service, version xerrorreport.Version) *rest.Extcuter {
+	panic(wire.Build(
+		rest.NewExecuter,
+		restSet,
+		gcpTraceInitializerSet,
+	))
+}
+
+func InitializeCloudRunRestExecuter(projectID xtrace.ProjectID, service xerrorreport.Service, version xerrorreport.Version) *rest.Extcuter {
 	panic(wire.Build(
 		rest.NewExecuter,
 		restSet,

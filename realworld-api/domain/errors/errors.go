@@ -10,10 +10,15 @@ type errorAndMessage struct {
 }
 
 var Errors = struct {
-	ErrValidation errorAndMessage
+	Validation errorAndMessage
+	NotFound   errorAndMessage
 }{
-	ErrValidation: errorAndMessage{
+	Validation: errorAndMessage{
 		Err:     errors.New("validation_error"),
 		Message: "failed to validate fields",
+	},
+	NotFound: errorAndMessage{
+		Err:     errors.New("not_found"),
+		Message: "specified entity is not found",
 	},
 }

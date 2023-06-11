@@ -1,4 +1,3 @@
-// Package auth provides ...
 package auth_test
 
 import (
@@ -21,11 +20,11 @@ func TestAuthToken(t *testing.T) {
 		t.Error("should be return true")
 	}
 	if diff := cmp.Diff(token, got); diff != "" {
-		t.Errorf(xtesting.ErrorMsg.Diff, diff)
+		xtesting.PrintDiff(t, "AuthTokenFromContext", diff)
 	}
 }
 
-func TestAuthTokenWihtoutSetTOken(t *testing.T) {
+func TestAuthTokenWihtoutSetToken(t *testing.T) {
 	ctx := context.Background()
 
 	got, ok := AuthTokenFromContext(ctx)
@@ -34,6 +33,6 @@ func TestAuthTokenWihtoutSetTOken(t *testing.T) {
 		t.Error("should be return false")
 	}
 	if diff := cmp.Diff(NewAuthToken(""), got); diff != "" {
-		t.Errorf(xtesting.ErrorMsg.Diff, diff)
+		xtesting.PrintDiff(t, "AuthTokenFromContext", diff)
 	}
 }

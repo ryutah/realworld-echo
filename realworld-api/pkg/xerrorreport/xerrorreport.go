@@ -9,11 +9,15 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+type Service string
+
+type Version string
+
 type ErrorReporter struct {
 	Service ServiceContext
 }
 
-func NewErrorReporter(service, version string) *ErrorReporter {
+func NewErrorReporter(service Service, version Version) *ErrorReporter {
 	return &ErrorReporter{
 		Service: ServiceContext{
 			Service: service,
@@ -23,15 +27,15 @@ func NewErrorReporter(service, version string) *ErrorReporter {
 }
 
 type ServiceContext struct {
-	Service string
-	Version string
+	Service Service
+	Version Version
 }
 
 var _ zapcore.ObjectMarshaler = (*ServiceContext)(nil)
 
 func (s ServiceContext) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("service", s.Service)
-	enc.AddString("version", s.Version)
+	enc.AddString("service", string(s.Service))
+	enc.AddString("version", string(s.Version))
 	return nil
 }
 

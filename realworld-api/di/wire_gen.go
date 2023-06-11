@@ -9,6 +9,7 @@ package di
 import (
 	"github.com/google/wire"
 	"github.com/ryutah/realworld-echo/realworld-api/api/rest"
+	"github.com/ryutah/realworld-echo/realworld-api/pkg/xerrorreport"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtrace"
 	"github.com/ryutah/realworld-echo/realworld-api/usecase"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -16,10 +17,12 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeLocalRestExecuter() *rest.Extcuter {
+func InitializeLocalRestExecuter(service xerrorreport.Service, version xerrorreport.Version) *rest.Extcuter {
 	errorOutputPort := rest.NewErrorOutputPort()
-	okOutputPort := rest.NewGetArticleOutputPort(errorOutputPort)
-	article := usecase.NewArticle(okOutputPort, errorOutputPort)
+	outputPort := rest.NewGetArticleOutputPort(errorOutputPort)
+	errorReporter := xerrorreport.NewErrorReporter(service, version)
+	errorHandler := usecase.NewErrorHandler(errorReporter, errorOutputPort)
+	article := usecase.NewArticle(outputPort, errorHandler)
 	restArticle := rest.NewArticle(article)
 	server := rest.NewServer(restArticle)
 	sampler := trace.NeverSample()
@@ -28,10 +31,26 @@ func InitializeLocalRestExecuter() *rest.Extcuter {
 	return extcuter
 }
 
-func InitializeAppEngineRestExecuter(projectID string) *rest.Extcuter {
+func InitializeAppEngineRestExecuter(projectID xtrace.ProjectID, service xerrorreport.Service, version xerrorreport.Version) *rest.Extcuter {
 	errorOutputPort := rest.NewErrorOutputPort()
-	okOutputPort := rest.NewGetArticleOutputPort(errorOutputPort)
-	article := usecase.NewArticle(okOutputPort, errorOutputPort)
+	outputPort := rest.NewGetArticleOutputPort(errorOutputPort)
+	errorReporter := xerrorreport.NewErrorReporter(service, version)
+	errorHandler := usecase.NewErrorHandler(errorReporter, errorOutputPort)
+	article := usecase.NewArticle(outputPort, errorHandler)
+	restArticle := rest.NewArticle(article)
+	server := rest.NewServer(restArticle)
+	sampler := trace.AlwaysSample()
+	initializer := xtrace.NewGoogleCloudTracingInitializer(projectID, sampler)
+	extcuter := rest.NewExecuter(server, initializer)
+	return extcuter
+}
+
+func InitializeCloudRunRestExecuter(projectID xtrace.ProjectID, service xerrorreport.Service, version xerrorreport.Version) *rest.Extcuter {
+	errorOutputPort := rest.NewErrorOutputPort()
+	outputPort := rest.NewGetArticleOutputPort(errorOutputPort)
+	errorReporter := xerrorreport.NewErrorReporter(service, version)
+	errorHandler := usecase.NewErrorHandler(errorReporter, errorOutputPort)
+	article := usecase.NewArticle(outputPort, errorHandler)
 	restArticle := rest.NewArticle(article)
 	server := rest.NewServer(restArticle)
 	sampler := trace.AlwaysSample()
@@ -44,10 +63,10 @@ func InitializeAppEngineRestExecuter(projectID string) *rest.Extcuter {
 
 var (
 	restSet       = wire.NewSet(rest.NewServer, rest.NewArticle, inputPortSet)
-	inputPortSet  = wire.NewSet(usecase.NewArticle, wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)), outputPortSet)
+	inputPortSet  = wire.NewSet(usecase.NewArticle, usecase.NewErrorHandler, wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)), outputPortSet)
 	outputPortSet = wire.NewSet(rest.NewErrorOutputPort, rest.NewGetArticleOutputPort)
 )
 
-var localTraceInitializerSet = wire.NewSet(xtrace.NewStdoutTracingInitializer, trace.NeverSample)
+var localTraceInitializerSet = wire.NewSet(xtrace.NewStdoutTracingInitializer, trace.NeverSample, xerrorreport.NewErrorReporter, wire.Bind(new(usecase.ErrorReporter), new(*xerrorreport.ErrorReporter)))
 
-var gcpTraceInitializerSet = wire.NewSet(xtrace.NewGoogleCloudTracingInitializer, trace.AlwaysSample)
+var gcpTraceInitializerSet = wire.NewSet(xtrace.NewGoogleCloudTracingInitializer, trace.AlwaysSample, xerrorreport.NewErrorReporter, wire.Bind(new(usecase.ErrorReporter), new(*xerrorreport.ErrorReporter)))

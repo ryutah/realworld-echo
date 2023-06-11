@@ -8,7 +8,9 @@ import (
 	"github.com/ryutah/realworld-echo/realworld-api/usecase"
 )
 
-type errorOutputPort struct{}
+type errorOutputPort struct {
+	usecase.ErrorOutputPort
+}
 
 func NewErrorOutputPort() usecase.ErrorOutputPort {
 	return &errorOutputPort{}

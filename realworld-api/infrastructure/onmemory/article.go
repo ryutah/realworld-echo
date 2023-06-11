@@ -9,7 +9,9 @@ import (
 	"github.com/ryutah/realworld-echo/realworld-api/domain/repository"
 )
 
-type Article struct{}
+type Article struct {
+	repository.Article
+}
 
 func NewArticle() repository.Article {
 	return &Article{}
@@ -21,10 +23,12 @@ func (a *Article) GenerateID(ctx context.Context) (model.ArticleID, error) {
 
 func (a *Article) Get(_ context.Context, slug premitive.Slug) (*model.Article, error) {
 	return &model.Article{
-		Slug:        slug,
-		Title:       "dummytitle",
-		Description: "dummyDescription",
-		Body:        "dummyBody",
+		Contents: model.ArticleContents{
+			Slug:        slug,
+			Title:       "dummytitle",
+			Description: "dummyDescription",
+			Body:        "dummyBody",
+		},
 		Author: &model.User{
 			Account: &model.Account{
 				Email: "aaa@gmail.com",

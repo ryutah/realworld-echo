@@ -8,11 +8,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
 	. "github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
+	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtesting"
 )
 
 func TestSlug(t *testing.T) {
 	type expected struct {
-		slug Slug
+		slug string
 		err  error
 	}
 
@@ -25,7 +26,7 @@ func TestSlug(t *testing.T) {
 			name: "valid_slug",
 			slug: "valid",
 			expected: expected{
-				slug: Slug("valid"),
+				slug: "valid",
 				err:  nil,
 			},
 		},
@@ -34,20 +35,17 @@ func TestSlug(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got, err := NewSlug(test.slug)
-			if diff := cmp.Diff(test.expected.slug, got); diff != "" {
-				t.Errorf("NewSlug(%q) got diff: %s", test.slug, diff)
+			if diff := cmp.Diff(test.expected.slug, got.String()); diff != "" {
+				xtesting.PrintDiff(t, "NewSlug", diff)
 			}
-			if !errors.Is(err, test.expected.err) {
-				t.Errorf("NewSlug(%q) got expected error: %v, got %v", test.slug, test.expected.err, err)
-				t.Log(errors.FlattenDetails(err))
-			}
+			xtesting.CompareError(t, "NewSlug", test.expected.err, err)
 		})
 	}
 }
 
 func TestTitle(t *testing.T) {
 	type expected struct {
-		title Title
+		title string
 		err   error
 	}
 
@@ -60,7 +58,7 @@ func TestTitle(t *testing.T) {
 			name:  "valid_title",
 			title: "valid",
 			expected: expected{
-				title: Title("valid"),
+				title: "valid",
 				err:   nil,
 			},
 		},
@@ -69,20 +67,17 @@ func TestTitle(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got, err := NewTitle(test.title)
-			if diff := cmp.Diff(test.expected.title, got); diff != "" {
-				t.Errorf("NewTitle(%q) got diff: %s", test.title, diff)
+			if diff := cmp.Diff(test.expected.title, got.String()); diff != "" {
+				xtesting.PrintDiff(t, "NewTitle", diff)
 			}
-			if !errors.Is(err, test.expected.err) {
-				t.Errorf("NewTitle(%q) got expected error: %v, got %v", test.title, test.expected.err, err)
-				t.Log(errors.FlattenDetails(err))
-			}
+			xtesting.CompareError(t, "NewTitle", test.expected.err, err)
 		})
 	}
 }
 
 func TestName(t *testing.T) {
 	type expected struct {
-		name Name
+		name string
 		err  error
 	}
 
@@ -95,7 +90,7 @@ func TestName(t *testing.T) {
 			name: "valid_title",
 			n:    "valid",
 			expected: expected{
-				name: Name("valid"),
+				name: "valid",
 				err:  nil,
 			},
 		},
@@ -104,20 +99,17 @@ func TestName(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got, err := NewName(test.n)
-			if diff := cmp.Diff(test.expected.name, got); diff != "" {
-				t.Errorf("NewName(%q) got diff: %s", test.n, diff)
+			if diff := cmp.Diff(test.expected.name, got.String()); diff != "" {
+				xtesting.PrintDiff(t, "NewName", diff)
 			}
-			if !errors.Is(err, test.expected.err) {
-				t.Errorf("NewName(%q) got expected error: %v, got %v", test.n, test.expected.err, err)
-				t.Log(errors.FlattenDetails(err))
-			}
+			xtesting.CompareError(t, "NewName", test.expected.err, err)
 		})
 	}
 }
 
 func TestEmail(t *testing.T) {
 	type expected struct {
-		email Email
+		email string
 		err   error
 	}
 
@@ -130,7 +122,7 @@ func TestEmail(t *testing.T) {
 			name:  "valid_email",
 			email: "example@gmail.com",
 			expected: expected{
-				email: Email("example@gmail.com"),
+				email: "example@gmail.com",
 				err:   nil,
 			},
 		},
@@ -138,7 +130,7 @@ func TestEmail(t *testing.T) {
 			name:  "valid_max_length_email",
 			email: strings.Repeat("a", 244) + "@gmail.com",
 			expected: expected{
-				email: Email(strings.Repeat("a", 244) + "@gmail.com"),
+				email: strings.Repeat("a", 244) + "@gmail.com",
 				err:   nil,
 			},
 		},
@@ -146,16 +138,16 @@ func TestEmail(t *testing.T) {
 			name:  "invalid_email",
 			email: "invalid_email_address",
 			expected: expected{
-				email: Email(""),
-				err:   derrors.Errors.ErrValidation.Err,
+				email: "",
+				err:   derrors.Errors.Validation.Err,
 			},
 		},
 		{
 			name:  "invalid_length_email",
 			email: strings.Repeat("a", 245) + "@gmail.com",
 			expected: expected{
-				email: Email(""),
-				err:   derrors.Errors.ErrValidation.Err,
+				email: "",
+				err:   derrors.Errors.Validation.Err,
 			},
 		},
 	}
@@ -163,11 +155,11 @@ func TestEmail(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got, err := NewEmail(test.email)
-			if diff := cmp.Diff(test.expected.email, got); diff != "" {
-				t.Errorf("NewEmail(%q) got diff: %s", test.email, diff)
+			if diff := cmp.Diff(test.expected.email, got.String()); diff != "" {
+				xtesting.PrintDiff(t, "NewEmail", diff)
 			}
-			if !errors.Is(err, test.expected.err) {
-				t.Errorf("NewEmail(%q) got expected error: %v, got %v", test.email, test.expected.err, err)
+
+			if !xtesting.CompareError(t, "NewEmail", test.expected.err, err) {
 				t.Log(errors.FlattenDetails(err))
 			}
 		})

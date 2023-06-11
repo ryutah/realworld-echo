@@ -29,3 +29,16 @@ generate/go: ## run go generate command
 .PHONY: generate/domain_diagram
 generate/domain_diagram: ## generate domain diagram
 	podman container run -it -v ${PWD}:/data --rm plantuml/plantuml:1 -tsvg ./docs/domain/domain.puml
+
+.PHONY: build/cloudrun
+build/cloudrun: ## build cloudrun container image
+	gcloud builds submit --config ./server/cloudrun/cloudbuild.yaml .
+
+.PHONY: deploy/cloudrun
+deploy/cloudrun: ## deploy cloudrun container image
+	gcloud run deploy \
+	  --image gcr.io/${PROJECT_ID}/realworld-api:latest \
+	  --platform managed \
+	  --region asia-northeast1 \
+	  --no-allow-unauthenticated \
+	  realworld-api

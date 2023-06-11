@@ -19,6 +19,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+type ProjectID string
+
 type FinishTraceFunc func(context.Context) error
 
 type Initializer interface {
@@ -59,11 +61,11 @@ func (s *stdoutTracingInitializer) HandlerWithTracing(h http.Handler) (http.Hand
 }
 
 type googleCloudTracingInitializer struct {
-	projectID string
+	projectID ProjectID
 	sampler   sdktrace.Sampler
 }
 
-func NewGoogleCloudTracingInitializer(projectID string, sampler sdktrace.Sampler) Initializer {
+func NewGoogleCloudTracingInitializer(projectID ProjectID, sampler sdktrace.Sampler) Initializer {
 	return &googleCloudTracingInitializer{
 		projectID: projectID,
 		sampler:   sampler,
@@ -75,7 +77,7 @@ func NewGoogleCloudTracingInitializer(projectID string, sampler sdktrace.Sampler
 //   - https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/blob/main/example/trace/http/server/server.go
 func (g *googleCloudTracingInitializer) HandlerWithTracing(h http.Handler) (http.Handler, FinishTraceFunc, error) {
 	ctx := context.Background()
-	exporter, err := texporter.New(texporter.WithProjectID(g.projectID))
+	exporter, err := texporter.New(texporter.WithProjectID(string(g.projectID)))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to generate exporter")
 	}

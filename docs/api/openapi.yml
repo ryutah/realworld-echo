@@ -429,9 +429,13 @@ components:
       properties:
         email:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: required,email,max=256
         password:
           type: string
           format: password
+          x-oapi-codegen-extra-tags:
+            validate: required,min=8,max=256
     NewUser:
       required:
         - email
@@ -446,12 +450,12 @@ components:
         email:
           type: string
           x-oapi-codegen-extra-tags:
-            validate: required,email
+            validate: required,email,max=256
         password:
           type: string
           format: password
           x-oapi-codegen-extra-tags:
-            validate: required
+            validate: required,min=8,max=256
     User:
       required:
         - bio
@@ -463,14 +467,22 @@ components:
       properties:
         email:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: required,email,max=256
         token:
           type: string
         username:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: required,max=256
         bio:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: max=1024
         image:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: url,max=2048
     UpdateUser:
       type: object
       properties:
@@ -516,16 +528,26 @@ components:
       properties:
         slug:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: required,max=256
         title:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: required,max=256
         description:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: max=1024
         body:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: max=16384
         tagList:
           type: array
           items:
             type: string
+          x-oapi-codegen-extra-tags:
+            validate: dive,max=256
         createdAt:
           type: string
           format: date-time
@@ -589,6 +611,8 @@ components:
           format: date-time
         body:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: max=16384
         author:
           $ref: '#/components/schemas/Profile'
     NewComment:
@@ -598,8 +622,6 @@ components:
       properties:
         body:
           type: string
-          x-oapi-codegen-extra-tags:
-            validate: required
     GenericErrorModel:
       required:
         - errors
