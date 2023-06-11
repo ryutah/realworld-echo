@@ -26,6 +26,16 @@ func NewErrorReporter(service Service, version Version) *ErrorReporter {
 	}
 }
 
+// ServiceContext is a struct for logging the service context of an error.
+// It is used to nest the service context under the "serviceContext" key in the JSON payload.
+//
+//	e.g.:
+//		{
+//		  "serviceContext": {
+//		    "service": "serviceName",
+//		    "version": "version",
+//		  }
+//		}
 type ServiceContext struct {
 	Service Service
 	Version Version
@@ -39,6 +49,16 @@ func (s ServiceContext) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+// ErrorContext is a struct for logging the context of an error.
+// It is used to nest the context under the "context" key in the JSON payload.
+//
+//	e.g.:
+//		{
+//		  "context": {
+//		    "user": "user",
+//		    "location": {/* location objects */}
+//		  }
+//		}
 type ErrorContext struct {
 	User     string
 	Location Location
@@ -51,6 +71,17 @@ func (e ErrorContext) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return enc.AddObject("location", e.Location)
 }
 
+// Location is a struct for logging the location of an error.
+// It is used to nest the location under the "location" key in the JSON payload.
+//
+//	e.g.:
+//		{
+//		  "location": {
+//		    "filePath": "foo.go",
+//		    "lineNumber": 10,
+//		    "functionName": "foo()"
+//		  }
+//		}
 type Location struct {
 	File     string
 	Line     int
@@ -66,6 +97,10 @@ func (l Location) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+// Report reports an error to Operations Suite ErrorReporting.
+// It logs the error to Cloud Logging Error Reporting as an Alert.
+//
+//	see: https://cloud.google.com/error-reporting/docs/formatting-error-messages?hl=ja#reported-error-example
 func (e *ErrorReporter) Report(ctx context.Context, err error, errContext ErrorContext) {
 	xlog.Alert(
 		ctx,
