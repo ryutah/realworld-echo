@@ -118,5 +118,6 @@ func StartSpan(ctx context.Context) (context.Context, trace.Span) {
 		panic("could not get caller function")
 	}
 	fn := runtime.FuncForPC(pc)
+	// TODO: set trace name
 	return otel.GetTracerProvider().Tracer("my_app").Start(ctx, fn.Name())
 }
