@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	authmodel "github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
 )
 
@@ -20,19 +21,31 @@ func getValidate() *validator.Validate {
 	return validate
 }
 
-type ArticleID premitive.UID
+type Slug premitive.UID
 
-type Article struct {
-	ID        ArticleID
-	Contents  ArticleContents
-	Author    *User
-	CreatedAt time.Time
-	UpdatedAt time.Time
+func NewSlug(s string) (Slug, error) {
+	slug, err := premitive.NewUID(s)
+	if err != nil {
+		return "", err
+	}
+	return Slug(slug), nil
 }
 
-func NewArticle(id ArticleID, contents ArticleContents, author *User) (*Article, error) {
+func (s Slug) String() string {
+	return premitive.UID(s).String()
+}
+
+type Article struct {
+	Slug      Slug             `validate:"required"`
+	Author    authmodel.UserID `validate:"required"`
+	Contents  ArticleContents
+	CreatedAt time.Time `validate:"required"`
+	UpdatedAt time.Time `validate:"required"`
+}
+
+func NewArticle(slug Slug, contents ArticleContents, author authmodel.UserID) (*Article, error) {
 	return &Article{
-		ID:        id,
+		Slug:      slug,
 		Contents:  contents,
 		Author:    author,
 		CreatedAt: time.Now(),
@@ -46,39 +59,21 @@ func (a *Article) SetContents(contents ArticleContents) {
 }
 
 type ArticleContents struct {
-	Slug        premitive.Slug  `validate:"required"`
 	Title       premitive.Title `validate:"required"`
 	Description premitive.LongText
 	Body        premitive.LongText
 }
 
-func NewArticleContents(slug, title, description, body string) (*ArticleContents, error) {
-	pslag, err := premitive.NewSlug(slug)
-	if err != nil {
-		return nil, err
-	}
-	ptitle, err := premitive.NewTitle(title)
-	if err != nil {
-		return nil, err
-	}
-	pdescription, err := premitive.NewLongText(description)
-	if err != nil {
-		return nil, err
-	}
-	pbody, err := premitive.NewLongText(body)
-	if err != nil {
-		return nil, err
-	}
-
+func NewArticleContents(title premitive.Title, description, body premitive.LongText) (*ArticleContents, error) {
 	contents := &ArticleContents{
-		Slug:        pslag,
-		Title:       ptitle,
-		Description: pdescription,
-		Body:        pbody,
+		Title:       title,
+		Description: description,
+		Body:        body,
 	}
 
+	// TODO
 	if err := getValidate().Struct(contents); err != nil {
-		return nil, nil
+		return nil, err
 	}
 	return contents, nil
 }

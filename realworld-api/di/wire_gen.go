@@ -9,9 +9,11 @@ package di
 import (
 	"github.com/google/wire"
 	"github.com/ryutah/realworld-echo/realworld-api/api/rest"
+	"github.com/ryutah/realworld-echo/realworld-api/domain/article/repository"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xerrorreport"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtrace"
 	"github.com/ryutah/realworld-echo/realworld-api/usecase"
+	"github.com/ryutah/realworld-echo/realworld-api/usecase/article"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -22,8 +24,9 @@ func InitializeLocalRestExecuter(service xerrorreport.Service, version xerrorrep
 	outputPort := rest.NewGetArticleOutputPort(errorOutputPort)
 	errorReporter := xerrorreport.NewErrorReporter(service, version)
 	errorHandler := usecase.NewErrorHandler(errorReporter, errorOutputPort)
-	article := usecase.NewArticle(outputPort, errorHandler)
-	restArticle := rest.NewArticle(article)
+	repositoryArticle := _wireArticleValue
+	articleArticle := article.NewArticle(outputPort, errorHandler, repositoryArticle)
+	restArticle := rest.NewArticle(articleArticle)
 	server := rest.NewServer(restArticle)
 	sampler := trace.NeverSample()
 	initializer := xtrace.NewStdoutTracingInitializer(sampler)
@@ -31,13 +34,18 @@ func InitializeLocalRestExecuter(service xerrorreport.Service, version xerrorrep
 	return extcuter
 }
 
+var (
+	_wireArticleValue = repository.Article(nil)
+)
+
 func InitializeAppEngineRestExecuter(projectID xtrace.ProjectID, service xerrorreport.Service, version xerrorreport.Version) *rest.Extcuter {
 	errorOutputPort := rest.NewErrorOutputPort()
 	outputPort := rest.NewGetArticleOutputPort(errorOutputPort)
 	errorReporter := xerrorreport.NewErrorReporter(service, version)
 	errorHandler := usecase.NewErrorHandler(errorReporter, errorOutputPort)
-	article := usecase.NewArticle(outputPort, errorHandler)
-	restArticle := rest.NewArticle(article)
+	repositoryArticle := _wireArticleValue
+	articleArticle := article.NewArticle(outputPort, errorHandler, repositoryArticle)
+	restArticle := rest.NewArticle(articleArticle)
 	server := rest.NewServer(restArticle)
 	sampler := trace.AlwaysSample()
 	initializer := xtrace.NewGoogleCloudTracingInitializer(projectID, sampler)
@@ -50,8 +58,9 @@ func InitializeCloudRunRestExecuter(projectID xtrace.ProjectID, service xerrorre
 	outputPort := rest.NewGetArticleOutputPort(errorOutputPort)
 	errorReporter := xerrorreport.NewErrorReporter(service, version)
 	errorHandler := usecase.NewErrorHandler(errorReporter, errorOutputPort)
-	article := usecase.NewArticle(outputPort, errorHandler)
-	restArticle := rest.NewArticle(article)
+	repositoryArticle := _wireArticleValue
+	articleArticle := article.NewArticle(outputPort, errorHandler, repositoryArticle)
+	restArticle := rest.NewArticle(articleArticle)
 	server := rest.NewServer(restArticle)
 	sampler := trace.AlwaysSample()
 	initializer := xtrace.NewGoogleCloudTracingInitializer(projectID, sampler)
@@ -62,9 +71,12 @@ func InitializeCloudRunRestExecuter(projectID xtrace.ProjectID, service xerrorre
 // wire.go:
 
 var (
-	restSet       = wire.NewSet(rest.NewServer, rest.NewArticle, inputPortSet)
-	inputPortSet  = wire.NewSet(usecase.NewArticle, usecase.NewErrorHandler, wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)), outputPortSet)
+	restSet      = wire.NewSet(rest.NewServer, rest.NewArticle, inputPortSet)
+	inputPortSet = wire.NewSet(article.NewArticle, usecase.NewErrorHandler, wire.Bind(new(article.GetArticleInputPort), new(*article.Article)), outputPortSet,
+		repositorySet,
+	)
 	outputPortSet = wire.NewSet(rest.NewErrorOutputPort, rest.NewGetArticleOutputPort)
+	repositorySet = wire.NewSet(wire.InterfaceValue(new(repository.Article), repository.Article(nil)))
 )
 
 var localTraceInitializerSet = wire.NewSet(xtrace.NewStdoutTracingInitializer, trace.NeverSample, xerrorreport.NewErrorReporter, wire.Bind(new(usecase.ErrorReporter), new(*xerrorreport.ErrorReporter)))

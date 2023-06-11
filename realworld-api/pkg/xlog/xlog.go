@@ -25,7 +25,7 @@ func Error(ctx context.Context, msg string, fields ...zap.Field) {
 
 func Alert(ctx context.Context, msg string, fields ...zap.Field) {
 	logger := LoggerFromContext(ctx)
-	logger.Error(msg, fields...)
+	logger.Log(alertLevel, msg, fields...)
 }
 
 type logKey struct{}
@@ -50,8 +50,14 @@ func ContextWithLogFields(ctx context.Context, fields ...zap.Field) context.Cont
 	return ContextWithLogger(ctx, LoggerFromContext(ctx).With(fields...))
 }
 
+// Custome log level
+//
+//	see: https://github.com/uber-go/zap/issues/680#issuecomment-1373065002
+const alertLevel = zapcore.DebugLevel - 1
+
 // see: https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity
 var logLevelSeverity = map[zapcore.Level]string{
+	alertLevel:         "ALERT",
 	zapcore.DebugLevel: "DEBUG",
 	zapcore.InfoLevel:  "INFO",
 	zapcore.WarnLevel:  "WARNING",

@@ -1,20 +1,20 @@
-package usecase
+package article
 
 import (
 	"context"
 
+	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
+	"github.com/ryutah/realworld-echo/realworld-api/domain/article/repository"
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
-	"github.com/ryutah/realworld-echo/realworld-api/domain/model"
-	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
-	"github.com/ryutah/realworld-echo/realworld-api/domain/repository"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xlog"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtrace"
+	"github.com/ryutah/realworld-echo/realworld-api/usecase"
 	"go.uber.org/zap"
 )
 
 type (
 	GetArticleResult struct {
-		Article *model.Article
+		Article model.Article
 	}
 	GetArticleInputPort interface {
 		Get(ctx context.Context, slugStr string) error
@@ -29,7 +29,7 @@ type (
 		TagList     []string
 	}
 	CreateArticleResult struct {
-		Article *model.Article
+		Article model.Article
 	}
 	CreateArticleInputPort interface {
 		Create(context.Context, CreateArticleRequest) error
@@ -40,12 +40,12 @@ type (
 //
 //	see: https://github.com/golang/mock/issues/621#issuecomment-1094351718
 type (
-	GetArticleOutputPort    = OutputPort[GetArticleResult]
-	CreateArticleOutputPort = OutputPort[CreateArticleResult]
+	GetArticleOutputPort    = usecase.OutputPort[GetArticleResult]
+	CreateArticleOutputPort = usecase.OutputPort[CreateArticleResult]
 )
 
 type Article struct {
-	errorHandler ErrorHandler
+	errorHandler usecase.ErrorHandler
 	outputPort   struct {
 		get    GetArticleOutputPort
 		create CreateArticleOutputPort
@@ -57,7 +57,7 @@ type Article struct {
 
 var _ GetArticleInputPort = (*Article)(nil)
 
-func NewArticle(okPort GetArticleOutputPort, errorHandler ErrorHandler) *Article {
+func NewArticle(okPort GetArticleOutputPort, errorHandler usecase.ErrorHandler, articleRepo repository.Article) *Article {
 	return &Article{
 		errorHandler: errorHandler,
 		outputPort: struct {
@@ -65,6 +65,11 @@ func NewArticle(okPort GetArticleOutputPort, errorHandler ErrorHandler) *Article
 			create CreateArticleOutputPort
 		}{
 			get: okPort,
+		},
+		repository: struct {
+			article repository.Article
+		}{
+			article: articleRepo,
 		},
 	}
 }
@@ -75,18 +80,18 @@ func (a *Article) Get(ctx context.Context, slugStr string) error {
 
 	ctx = xlog.ContextWithLogFields(ctx, zap.String("slug", slugStr))
 
-	slug, err := premitive.NewSlug(slugStr)
+	slug, err := model.NewSlug(slugStr)
 	if err != nil {
-		return a.errorHandler.handle(ctx, err, withErrorRendrer(derrors.Errors.Validation.Err, badRequest))
+		return a.errorHandler.Handle(ctx, err, usecase.WithErrorRendrer(derrors.Errors.Validation.Err, usecase.BadRequest))
 	}
 
 	article, err := a.repository.article.Get(ctx, slug)
 	if err != nil {
-		return a.errorHandler.handle(ctx, err, withErrorRendrer(derrors.Errors.NotFound.Err, notFound))
+		return a.errorHandler.Handle(ctx, err, usecase.WithErrorRendrer(derrors.Errors.NotFound.Err, usecase.NotFound))
 	}
 
 	return a.outputPort.get.Success(ctx, GetArticleResult{
-		Article: article,
+		Article: *article,
 	})
 }
 

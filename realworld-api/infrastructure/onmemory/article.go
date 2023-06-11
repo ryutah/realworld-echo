@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/ryutah/realworld-echo/realworld-api/domain/model"
-	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
-	"github.com/ryutah/realworld-echo/realworld-api/domain/repository"
+	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
+	"github.com/ryutah/realworld-echo/realworld-api/domain/article/repository"
+	authmodel "github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
 )
 
 type Article struct {
@@ -17,27 +17,19 @@ func NewArticle() repository.Article {
 	return &Article{}
 }
 
-func (a *Article) GenerateID(ctx context.Context) (model.ArticleID, error) {
+func (a *Article) GenerateID(ctx context.Context) (model.Slug, error) {
 	return "", nil
 }
 
-func (a *Article) Get(_ context.Context, slug premitive.Slug) (*model.Article, error) {
+func (a *Article) Get(_ context.Context, slug model.Slug) (*model.Article, error) {
 	return &model.Article{
+		Slug: slug,
 		Contents: model.ArticleContents{
-			Slug:        slug,
 			Title:       "dummytitle",
 			Description: "dummyDescription",
 			Body:        "dummyBody",
 		},
-		Author: &model.User{
-			Account: &model.Account{
-				Email: "aaa@gmail.com",
-			},
-			Profile: &model.Profile{
-				Username: "sample",
-				Image:    "http:/xxx.com",
-			},
-		},
+		Author:    authmodel.UserID("dummy"),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}, nil

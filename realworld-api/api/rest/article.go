@@ -9,15 +9,16 @@ import (
 	"github.com/ryutah/realworld-echo/realworld-api/api/rest/gen"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtrace"
 	"github.com/ryutah/realworld-echo/realworld-api/usecase"
+	"github.com/ryutah/realworld-echo/realworld-api/usecase/article"
 )
 
 type getArticleOutputPort struct{}
 
-func NewGetArticleOutputPort(e usecase.ErrorOutputPort) usecase.OutputPort[usecase.GetArticleResult] {
+func NewGetArticleOutputPort(e usecase.ErrorOutputPort) usecase.OutputPort[article.GetArticleResult] {
 	return &getArticleOutputPort{}
 }
 
-func (g *getArticleOutputPort) Success(ctx context.Context, article usecase.GetArticleResult) error {
+func (g *getArticleOutputPort) Success(ctx context.Context, article article.GetArticleResult) error {
 	c := echoContextFromContext(ctx)
 	return c.JSON(http.StatusOK, gen.SingleArticleResponse{
 		Article: gen.Article{
@@ -27,7 +28,7 @@ func (g *getArticleOutputPort) Success(ctx context.Context, article usecase.GetA
 				Image:     "dummy",
 				Username:  "dummy",
 			},
-			Slug:           article.Article.Contents.Slug.String(),
+			Slug:           article.Article.Slug.String(),
 			Title:          article.Article.Contents.Title.String(),
 			Description:    article.Article.Contents.Description.String(),
 			Body:           article.Article.Contents.Description.String(),
@@ -42,14 +43,14 @@ func (g *getArticleOutputPort) Success(ctx context.Context, article usecase.GetA
 
 type Article struct {
 	inputPort struct {
-		getArticle usecase.GetArticleInputPort
+		getArticle article.GetArticleInputPort
 	}
 }
 
-func NewArticle(getArticle usecase.GetArticleInputPort) *Article {
+func NewArticle(getArticle article.GetArticleInputPort) *Article {
 	return &Article{
 		inputPort: struct {
-			getArticle usecase.GetArticleInputPort
+			getArticle article.GetArticleInputPort
 		}{
 			getArticle: getArticle,
 		},

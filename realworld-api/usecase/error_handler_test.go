@@ -104,7 +104,7 @@ func Test_RrrorHandler_Handle(t *testing.T) {
 				outputPort.EXPECT().InternalError(gomock.Not(nil), tt.mocks.outputPort.internalError_args_errorResult).Return(tt.mocks.outputPort.internalError_returns_error)
 			}
 
-			e := NewErrorHandler(errorReporter, outputPort).(*ExportErrorHandler)
+			e := NewErrorHandler(errorReporter, outputPort)
 			err := e.Handle(tt.args.ctx, tt.args.err, tt.args.opts...)
 			xtesting.CompareError(t, "handle", tt.wants, err)
 		})

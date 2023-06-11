@@ -26,7 +26,7 @@ type ErrorOutputPort interface {
 type ErrorHandlerOption func(*errorHandlerConfig)
 
 type ErrorHandler interface {
-	handle(context.Context, error, ...ErrorHandlerOption) error
+	Handle(context.Context, error, ...ErrorHandlerOption) error
 }
 
 type errorHandler struct {
@@ -41,7 +41,7 @@ func NewErrorHandler(errorReporter ErrorReporter, outputPort ErrorOutputPort) Er
 	}
 }
 
-func (e *errorHandler) handle(ctx context.Context, err error, opts ...ErrorHandlerOption) error {
+func (e *errorHandler) Handle(ctx context.Context, err error, opts ...ErrorHandlerOption) error {
 	var opt errorHandlerConfig
 	for _, o := range opts {
 		o(&opt)
@@ -79,7 +79,7 @@ type errorRenderer struct {
 	renderer renderFunc
 }
 
-func withErrorRendrer(target error, f renderFunc) ErrorHandlerOption {
+func WithErrorRendrer(target error, f renderFunc) ErrorHandlerOption {
 	return func(opt *errorHandlerConfig) {
 		opt.rendrers = append(opt.rendrers, errorRenderer{
 			target:   target,
@@ -88,14 +88,14 @@ func withErrorRendrer(target error, f renderFunc) ErrorHandlerOption {
 	}
 }
 
-func badRequest(ctx context.Context, port ErrorOutputPort, err error) error {
+func BadRequest(ctx context.Context, port ErrorOutputPort, err error) error {
 	return port.BadRequest(ctx, ErrorResult{
 		Message:      fmt.Sprintf("%v", err),
 		Descriptions: errors.GetAllDetails(err),
 	})
 }
 
-func notFound(ctx context.Context, port ErrorOutputPort, err error) error {
+func NotFound(ctx context.Context, port ErrorOutputPort, err error) error {
 	return port.NotFound(ctx, ErrorResult{
 		Message:      fmt.Sprintf("%v", err),
 		Descriptions: errors.GetAllDetails(err),

@@ -11,6 +11,46 @@ import (
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtesting"
 )
 
+func TestUID(t *testing.T) {
+	type expected struct {
+		uid string
+		err error
+	}
+
+	tests := []struct {
+		name     string
+		uid      string
+		expected expected
+	}{
+		{
+			name: "valid_uid",
+			uid:  "valid",
+			expected: expected{
+				uid: "valid",
+				err: nil,
+			},
+		},
+		{
+			name: "invalid_length_uid",
+			uid:  strings.Repeat("a", 256),
+			expected: expected{
+				uid: "",
+				err: derrors.Errors.Validation.Err,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := NewUID(test.uid)
+			if diff := cmp.Diff(test.expected.uid, got.String()); diff != "" {
+				xtesting.PrintDiff(t, "NewUID", diff)
+			}
+			xtesting.CompareError(t, "NewUID", test.expected.err, err)
+		})
+	}
+}
+
 func TestSlug(t *testing.T) {
 	type expected struct {
 		slug string
@@ -28,6 +68,14 @@ func TestSlug(t *testing.T) {
 			expected: expected{
 				slug: "valid",
 				err:  nil,
+			},
+		},
+		{
+			name: "invalid_length_slug",
+			slug: strings.Repeat("a", 51),
+			expected: expected{
+				slug: "",
+				err:  derrors.Errors.Validation.Err,
 			},
 		},
 	}

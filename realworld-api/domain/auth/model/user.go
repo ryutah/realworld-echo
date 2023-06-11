@@ -2,7 +2,7 @@ package model
 
 import "github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
 
-type UserID string
+type UserID premitive.UID
 
 type User struct {
 	ID      UserID

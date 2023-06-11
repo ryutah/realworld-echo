@@ -6,9 +6,11 @@ package di
 import (
 	"github.com/google/wire"
 	"github.com/ryutah/realworld-echo/realworld-api/api/rest"
+	"github.com/ryutah/realworld-echo/realworld-api/domain/article/repository"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xerrorreport"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtrace"
 	"github.com/ryutah/realworld-echo/realworld-api/usecase"
+	"github.com/ryutah/realworld-echo/realworld-api/usecase/article"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -19,14 +21,19 @@ var (
 		inputPortSet,
 	)
 	inputPortSet = wire.NewSet(
-		usecase.NewArticle,
+		article.NewArticle,
 		usecase.NewErrorHandler,
-		wire.Bind(new(usecase.GetArticleInputPort), new(*usecase.Article)),
+		wire.Bind(new(article.GetArticleInputPort), new(*article.Article)),
 		outputPortSet,
+		repositorySet,
 	)
 	outputPortSet = wire.NewSet(
 		rest.NewErrorOutputPort,
 		rest.NewGetArticleOutputPort,
+	)
+	// TODO: set real repository
+	repositorySet = wire.NewSet(
+		wire.InterfaceValue(new(repository.Article), repository.Article(nil)),
 	)
 )
 

@@ -24,6 +24,7 @@ func NewUID(s string) (UID, error) {
 	return withValidate(
 		s,
 		func() UID { return UID(s) },
+		max(255),
 	)
 }
 
@@ -35,6 +36,7 @@ func NewSlug(s string) (Slug, error) {
 	return withValidate(
 		s,
 		func() Slug { return Slug(s) },
+		max(50),
 	)
 }
 
