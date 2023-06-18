@@ -8,6 +8,11 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+func Debug(ctx context.Context, msg string, fields ...zap.Field) {
+	logger := LoggerFromContext(ctx)
+	logger.Debug(msg, fields...)
+}
+
 func Info(ctx context.Context, msg string, fields ...zap.Field) {
 	logger := LoggerFromContext(ctx)
 	logger.Info(msg, fields...)

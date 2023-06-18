@@ -2,6 +2,7 @@ package article
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/repository"
@@ -85,6 +86,7 @@ func (a *Article) Get(ctx context.Context, slugStr string) error {
 		return a.errorHandler.Handle(ctx, err, usecase.WithErrorRendrer(derrors.Errors.Validation.Err, usecase.BadRequest))
 	}
 
+	xlog.Info(ctx, fmt.Sprintf("get article by: %v", slug))
 	article, err := a.repository.article.Get(ctx, slug)
 	if err != nil {
 		return a.errorHandler.Handle(ctx, err, usecase.WithErrorRendrer(derrors.Errors.NotFound.Err, usecase.NotFound))

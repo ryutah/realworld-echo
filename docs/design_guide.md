@@ -92,4 +92,86 @@
 
 ## データベース
 
-- テーブル名の命名規則は特にこだわりがなければ単数形とする
+### PostgreSQL
+
+#### ID 生成
+
+- UUID v4 を利用する
+- アプリケーションロジックで生成
+- デフォルト値を設定する
+
+```sql
+id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid()
+```
+
+#### メタデータカラム
+
+| column     | explain        | dsl                                                       |
+| ---------- | -------------- | --------------------------------------------------------- |
+| created_at | データ作成日時 | created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP |
+| updated_at | データ更新日時 | updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP |
+
+- 基本的には、アプリケーション側で指定を行う
+  - `updated_at` は特に更新は自動で行われないため、アプリケーションロジックで必ず設定
+
+#### Example
+
+```sql
+CREATE TABLE users (
+  id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+  name name NOT NULL,
+  birthday DATE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULl DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### 外部キー制約
+
+- 外部キー制約をつける場合、 JOIN 等を行うことを意図しているカラムであるならば必ず INDEX も併せて追加すること
+
+```sql
+ALTER TABLE "playlist" ADD FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE;
+CREATE INDEX user_id_fk_index ON "playlist" USING btree ("user_id");
+```
+
+## ログ
+
+### 出力するログ
+
+次のログを必ず出力する
+
+| log                              | level | reason                                             | output                             |
+| -------------------------------- | ----- | -------------------------------------------------- | ---------------------------------- |
+| アクセスログ                     | info  |                                                    |                                    |
+| アプリケーションロジック開始ログ | info  | 実際に実行された処理がトレースできるようにするため | start [proc_name] with [arguments] |
+| データ I/O ログ                  | info  |                                                    |                                    |
+| エラーログ                       | error |                                                    |                                    |
+| エラートレースログ               | error |                                                    |                                    |
+
+### その他、あるとよいログ
+
+| log        | level | reason                                             | output |
+| ---------- | ----- | -------------------------------------------------- | ------ |
+| 処理コール | debug | 実際に実行された処理がトレースできるようにするため |        |
+
+> **Note**
+>
+> ### Appendix 良いログを書く
+>
+> 5W1H を意識することで、トレーサビリティが上がる。
+> どのようなログを出力すればいいか悩んだときは、次のような情報が出力されているかを考慮すること。
+>
+> 例えば、 `not found entity` というエラーログだけが出力されていても何も情報がないため調査が非常に困難になる。
+> これを補足するために、次のような情報が併せて出力されていると、トレーサビリティが非常に高くなる。
+>
+> - いつ (処理が実行された時間)
+> - 誰が (ユーザ ID, トレース ID, リクエスト ID)
+> - どこで
+>   - どの機能、画面からのアクセスで発生したのか
+> - 何を
+> - なぜ
+> - どのように
+>
+> これらの情報は、リクエストログで自動出力されるものもありはするのだが、技術詳細のパートで出力するのではなく
+> しっかりとアプリケーションロジックの一部として考えるべきものであるため、ユースケースで出力するのが望ましい

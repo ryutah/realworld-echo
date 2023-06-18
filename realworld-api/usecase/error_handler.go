@@ -6,6 +6,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xerrorreport"
+	"github.com/ryutah/realworld-echo/realworld-api/pkg/xlog"
 )
 
 type ErrorReporter interface {
@@ -42,6 +43,8 @@ func NewErrorHandler(errorReporter ErrorReporter, outputPort ErrorOutputPort) Er
 }
 
 func (e *errorHandler) Handle(ctx context.Context, err error, opts ...ErrorHandlerOption) error {
+	xlog.Warn(ctx, fmt.Sprintf("render error: %+v", err))
+
 	var opt errorHandlerConfig
 	for _, o := range opts {
 		o(&opt)
@@ -52,6 +55,8 @@ func (e *errorHandler) Handle(ctx context.Context, err error, opts ...ErrorHandl
 			return catch.renderer(ctx, e.outputPort, err)
 		}
 	}
+
+	xlog.Debug(ctx, "render internal error")
 
 	file, line, fn, _ := errors.GetOneLineSource(err)
 	e.errorReporter.Report(ctx, err, xerrorreport.ErrorContext{
@@ -89,6 +94,7 @@ func WithErrorRendrer(target error, f renderFunc) ErrorHandlerOption {
 }
 
 func BadRequest(ctx context.Context, port ErrorOutputPort, err error) error {
+	xlog.Debug(ctx, "render bad request")
 	return port.BadRequest(ctx, ErrorResult{
 		Message:      fmt.Sprintf("%v", err),
 		Descriptions: errors.GetAllDetails(err),
@@ -96,6 +102,7 @@ func BadRequest(ctx context.Context, port ErrorOutputPort, err error) error {
 }
 
 func NotFound(ctx context.Context, port ErrorOutputPort, err error) error {
+	xlog.Debug(ctx, "render not found")
 	return port.NotFound(ctx, ErrorResult{
 		Message:      fmt.Sprintf("%v", err),
 		Descriptions: errors.GetAllDetails(err),
