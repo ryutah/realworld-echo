@@ -1,4 +1,4 @@
-import { ChangeEvent, HTMLInputTypeAttribute, useState } from "react";
+import {ChangeEvent, HTMLInputTypeAttribute, useState} from "react";
 
 const Title = () => (
   <>
@@ -28,7 +28,7 @@ type InputProps = {
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
 };
 
-const Input = ({ type, placeholder, onChange }: InputProps) => (
+const Input = ({type, placeholder, onChange}: InputProps) => (
   <input
     onChange={(e) => onChange(e)}
     className="form-control form-control-lg"
@@ -90,15 +90,28 @@ type SignUpProps = {
     email: string;
     password: string;
   }) => void;
+  onChangeEmail?: (email: string) => void;
 };
 
 export default function SignUp({
   duplicateEmail = false,
   onSubmit,
+  onChangeEmail,
 }: SignUpProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [timerId, setTimerId] = useState<NodeJS.Timeout>()
+
+  const changeEmail = (email: string) => {
+    setEmail(email)
+
+    clearTimeout(timerId)
+    const timer = setTimeout(() => {
+      onChangeEmail?.(email)
+    }, 500)
+    setTimerId(timer)
+  }
 
   return (
     <div className="auth-page">
@@ -111,9 +124,9 @@ export default function SignUp({
 
             <Form
               onChangeName={(name) => setName(name)}
-              onChangeEmail={(email) => setEmail(email)}
+              onChangeEmail={changeEmail}
               onChangePassword={(password) => setPassword(password)}
-              onSubmit={() => onSubmit?.({ name, email, password })}
+              onSubmit={() => onSubmit?.({name, email, password})}
             />
           </div>
         </div>

@@ -1,6 +1,6 @@
 import SignUp from "@/components/auth/SignUp";
-import { useUserDispatchContext } from "@/contexts/UserProvider";
-import { UserActionType } from "@/reducers/userReducer";
+import {useUserDispatchContext} from "@/contexts/UserProvider";
+import {UserActionType} from "@/reducers/userReducer";
 
 export default function Register() {
   const dispatch = useUserDispatchContext();
@@ -15,13 +15,23 @@ export default function Register() {
   }) => {
     dispatch({
       type: UserActionType.REGISTER,
-      payload: { name, email, password },
+      payload: {name, email, password},
     });
   };
+  const onChangeEmail = (email: string) => {
+    if (email === "") {
+      return;
+    }
+
+    dispatch({
+      type: UserActionType.EMAIL_DUPLICATE_CHECK,
+      payload: {email},
+    });
+  }
 
   return (
     <>
-      <SignUp onSubmit={onSubmit} />
+      <SignUp onSubmit={onSubmit} onChangeEmail={onChangeEmail} />
     </>
   );
 }

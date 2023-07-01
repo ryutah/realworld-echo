@@ -67,7 +67,7 @@ export default function userReducer(
       console.log("logout start");
       return state.logout();
     case UserActionType.EMAIL_DUPLICATE_CHECK:
-      alert("email duplicate check");
+      console.log("email duplicate check");
       return state;
   }
 }
