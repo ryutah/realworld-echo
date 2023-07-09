@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/errors"
-	"github.com/golang/mock/gomock"
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtesting"
 	. "github.com/ryutah/realworld-echo/realworld-api/usecase"
 	"github.com/ryutah/realworld-echo/realworld-api/usecase/mock"
+	"go.uber.org/mock/gomock"
 )
 
 func Test_RrrorHandler_Handle(t *testing.T) {

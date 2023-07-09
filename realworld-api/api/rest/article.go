@@ -12,10 +12,14 @@ import (
 	"github.com/ryutah/realworld-echo/realworld-api/usecase/article"
 )
 
-type getArticleOutputPort struct{}
+type getArticleOutputPort struct {
+	usecase.GenericsErrorOutputPort[article.GetArticleResult]
+}
 
 func NewGetArticleOutputPort(e usecase.ErrorOutputPort) usecase.OutputPort[article.GetArticleResult] {
-	return &getArticleOutputPort{}
+	return &getArticleOutputPort{
+		GenericsErrorOutputPort: newGenericsErrorOutputPort[article.GetArticleResult](),
+	}
 }
 
 func (g *getArticleOutputPort) Success(ctx context.Context, article article.GetArticleResult) error {
@@ -43,21 +47,27 @@ func (g *getArticleOutputPort) Success(ctx context.Context, article article.GetA
 
 type Article struct {
 	inputPort struct {
-		getArticle article.GetArticleInputPort
+		getArticle  article.GetArticleInputPort
+		listArticle article.List[gen.GetArticlesResponseObject]
 	}
 }
 
 func NewArticle(getArticle article.GetArticleInputPort) *Article {
 	return &Article{
 		inputPort: struct {
-			getArticle article.GetArticleInputPort
+			getArticle  article.GetArticleInputPort
+			listArticle article.List[gen.GetArticlesResponseObject]
 		}{
 			getArticle: getArticle,
 		},
 	}
 }
 
-func (a *Article) GetArticle(c echo.Context, slug string) error {
+func (a *Article) GetArticles(ctx context.Context, request gen.GetArticlesRequestObject) (gen.GetArticlesResponseObject, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (a *Article) GetArticle_(c echo.Context, slug string) error {
 	ctx, span := xtrace.StartSpan(newContext(c))
 	defer span.End()
 	return a.inputPort.getArticle.Get(ctx, slug)

@@ -32,3 +32,11 @@ func (e *errorOutputPort) InternalError(ctx context.Context, result usecase.Erro
 func (e *errorOutputPort) NotFound(_ context.Context, _ usecase.ErrorResult) error {
 	panic("not implemented") // TODO: Implement
 }
+
+type genericsErrorOutputPort[Ret any] struct {
+	usecase.GenericsErrorOutputPort[Ret]
+}
+
+func newGenericsErrorOutputPort[Ret any]() usecase.GenericsErrorOutputPort[Ret] {
+	return &genericsErrorOutputPort[Ret]{}
+}

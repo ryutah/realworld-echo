@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	. "github.com/ryutah/realworld-echo/realworld-api/api/rest"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtesting"
+	gomock "go.uber.org/mock/gomock"
 )
 
 func Test_Context(t *testing.T) {

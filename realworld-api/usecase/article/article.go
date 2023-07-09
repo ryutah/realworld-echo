@@ -37,19 +37,11 @@ type (
 	}
 )
 
-// NOTE: workfaround for gomock
-//
-//	see: https://github.com/golang/mock/issues/621#issuecomment-1094351718
-type (
-	GetArticleOutputPort    = usecase.OutputPort[GetArticleResult]
-	CreateArticleOutputPort = usecase.OutputPort[CreateArticleResult]
-)
-
 type Article struct {
 	errorHandler usecase.ErrorHandler
 	outputPort   struct {
-		get    GetArticleOutputPort
-		create CreateArticleOutputPort
+		get    usecase.OutputPort[GetArticleResult]
+		create usecase.OutputPort[CreateArticleResult]
 	}
 	repository struct {
 		article repository.Article
@@ -58,12 +50,12 @@ type Article struct {
 
 var _ GetArticleInputPort = (*Article)(nil)
 
-func NewArticle(okPort GetArticleOutputPort, errorHandler usecase.ErrorHandler, articleRepo repository.Article) *Article {
+func NewArticle(okPort usecase.OutputPort[GetArticleResult], errorHandler usecase.ErrorHandler, articleRepo repository.Article) *Article {
 	return &Article{
 		errorHandler: errorHandler,
 		outputPort: struct {
-			get    GetArticleOutputPort
-			create CreateArticleOutputPort
+			get    usecase.OutputPort[GetArticleResult]
+			create usecase.OutputPort[CreateArticleResult]
 		}{
 			get: okPort,
 		},

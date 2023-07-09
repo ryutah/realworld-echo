@@ -28,8 +28,9 @@ func NewExecuter(server *Server, traceInitializer xtrace.Initializer) *Extcuter 
 func (e *Extcuter) Start() {
 	ec := echo.New()
 	ec.Use(middleware.WithLogger)
+	si := gen.NewStrictHandler(e.server, []gen.StrictMiddlewareFunc{})
 
-	gen.RegisterHandlersWithBaseURL(ec, e.server, "/api")
+	gen.RegisterHandlersWithBaseURL(ec, si, "/api")
 
 	traceHandler, traceFinish, err := e.traceInitializer.HandlerWithTracing(ec)
 	if err != nil {

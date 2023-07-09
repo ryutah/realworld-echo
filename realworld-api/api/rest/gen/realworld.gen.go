@@ -10,2950 +10,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
 )
-
-const (
-	TokenScopes = "Token.Scopes"
-)
-
-// Article defines model for Article.
-type Article struct {
-	Author         Profile   `json:"author"`
-	Body           string    `json:"body" validate:"max=16384"`
-	CreatedAt      time.Time `json:"createdAt"`
-	Description    string    `json:"description" validate:"max=1024"`
-	Favorited      bool      `json:"favorited"`
-	FavoritesCount int       `json:"favoritesCount"`
-	Slug           string    `json:"slug" validate:"required,max=256"`
-	TagList        []string  `json:"tagList" validate:"dive,max=256"`
-	Title          string    `json:"title" validate:"required,max=256"`
-	UpdatedAt      time.Time `json:"updatedAt"`
-}
-
-// Comment defines model for Comment.
-type Comment struct {
-	Author    Profile   `json:"author"`
-	Body      string    `json:"body" validate:"max=16384"`
-	CreatedAt time.Time `json:"createdAt"`
-	Id        int       `json:"id"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-// GenericErrorModel defines model for GenericErrorModel.
-type GenericErrorModel struct {
-	Errors struct {
-		Body []string `json:"body"`
-	} `json:"errors"`
-}
-
-// LoginUser defines model for LoginUser.
-type LoginUser struct {
-	Email    string `json:"email" validate:"required,email,max=256"`
-	Password string `json:"password" validate:"required,min=8,max=256"`
-}
-
-// NewArticle defines model for NewArticle.
-type NewArticle struct {
-	Body        string    `json:"body" validate:"required"`
-	Description string    `json:"description" validate:"required"`
-	TagList     *[]string `json:"tagList,omitempty"`
-	Title       string    `json:"title" validate:"required"`
-}
-
-// NewComment defines model for NewComment.
-type NewComment struct {
-	Body string `json:"body"`
-}
-
-// NewUser defines model for NewUser.
-type NewUser struct {
-	Email    string `json:"email" validate:"required,email,max=256"`
-	Password string `json:"password" validate:"required,min=8,max=256"`
-	Username string `json:"username" validate:"required"`
-}
-
-// Profile defines model for Profile.
-type Profile struct {
-	Bio       string `json:"bio"`
-	Following bool   `json:"following"`
-	Image     string `json:"image"`
-	Username  string `json:"username"`
-}
-
-// UpdateArticle defines model for UpdateArticle.
-type UpdateArticle struct {
-	Body        *string `json:"body,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Title       *string `json:"title,omitempty"`
-}
-
-// UpdateUser defines model for UpdateUser.
-type UpdateUser struct {
-	Bio      *string `json:"bio,omitempty"`
-	Email    *string `json:"email,omitempty"`
-	Image    *string `json:"image,omitempty"`
-	Password *string `json:"password,omitempty"`
-	Username *string `json:"username,omitempty"`
-}
-
-// User defines model for User.
-type User struct {
-	Bio      string `json:"bio" validate:"max=1024"`
-	Email    string `json:"email" validate:"required,email,max=256"`
-	Image    string `json:"image" validate:"url,max=2048"`
-	Token    string `json:"token"`
-	Username string `json:"username" validate:"required,max=256"`
-}
-
-// LimitParam defines model for limitParam.
-type LimitParam = int
-
-// OffsetParam defines model for offsetParam.
-type OffsetParam = int
-
-// GenericError defines model for GenericError.
-type GenericError = GenericErrorModel
-
-// MultipleArticlesResponse defines model for MultipleArticlesResponse.
-type MultipleArticlesResponse struct {
-	Articles      []Article `json:"articles"`
-	ArticlesCount int       `json:"articlesCount"`
-}
-
-// MultipleCommentsResponse defines model for MultipleCommentsResponse.
-type MultipleCommentsResponse struct {
-	Comments []Comment `json:"comments"`
-}
-
-// ProfileResponse defines model for ProfileResponse.
-type ProfileResponse struct {
-	Profile Profile `json:"profile"`
-}
-
-// SingleArticleResponse defines model for SingleArticleResponse.
-type SingleArticleResponse struct {
-	Article Article `json:"article"`
-}
-
-// SingleCommentResponse defines model for SingleCommentResponse.
-type SingleCommentResponse struct {
-	Comment Comment `json:"comment"`
-}
-
-// TagsResponse defines model for TagsResponse.
-type TagsResponse struct {
-	Tags []string `json:"tags"`
-}
-
-// UserResponse defines model for UserResponse.
-type UserResponse struct {
-	User User `json:"user"`
-}
-
-// LoginUserRequest defines model for LoginUserRequest.
-type LoginUserRequest struct {
-	User LoginUser `json:"user"`
-}
-
-// NewArticleRequest defines model for NewArticleRequest.
-type NewArticleRequest struct {
-	Article NewArticle `json:"article"`
-}
-
-// NewCommentRequest defines model for NewCommentRequest.
-type NewCommentRequest struct {
-	Comment NewComment `json:"comment"`
-}
-
-// NewUserRequest defines model for NewUserRequest.
-type NewUserRequest struct {
-	User NewUser `json:"user"`
-}
-
-// UpdateArticleRequest defines model for UpdateArticleRequest.
-type UpdateArticleRequest struct {
-	Article UpdateArticle `json:"article"`
-}
-
-// UpdateUserRequest defines model for UpdateUserRequest.
-type UpdateUserRequest struct {
-	User UpdateUser `json:"user"`
-}
-
-// GetArticlesParams defines parameters for GetArticles.
-type GetArticlesParams struct {
-	// Tag Filter by tag
-	Tag *string `form:"tag,omitempty" json:"tag,omitempty"`
-
-	// Author Filter by author (username)
-	Author *string `form:"author,omitempty" json:"author,omitempty"`
-
-	// Favorited Filter by favorites of a user (username)
-	Favorited *string `form:"favorited,omitempty" json:"favorited,omitempty"`
-
-	// Offset The number of items to skip before starting to collect the result set.
-	Offset *OffsetParam `form:"offset,omitempty" json:"offset,omitempty"`
-
-	// Limit The numbers of items to return.
-	Limit *LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
-// CreateArticleJSONBody defines parameters for CreateArticle.
-type CreateArticleJSONBody struct {
-	Article NewArticle `json:"article"`
-}
-
-// GetArticlesFeedParams defines parameters for GetArticlesFeed.
-type GetArticlesFeedParams struct {
-	// Offset The number of items to skip before starting to collect the result set.
-	Offset *OffsetParam `form:"offset,omitempty" json:"offset,omitempty"`
-
-	// Limit The numbers of items to return.
-	Limit *LimitParam `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
-// UpdateArticleJSONBody defines parameters for UpdateArticle.
-type UpdateArticleJSONBody struct {
-	Article UpdateArticle `json:"article"`
-}
-
-// CreateArticleCommentJSONBody defines parameters for CreateArticleComment.
-type CreateArticleCommentJSONBody struct {
-	Comment NewComment `json:"comment"`
-}
-
-// UpdateCurrentUserJSONBody defines parameters for UpdateCurrentUser.
-type UpdateCurrentUserJSONBody struct {
-	User UpdateUser `json:"user"`
-}
-
-// CreateUserJSONBody defines parameters for CreateUser.
-type CreateUserJSONBody struct {
-	User NewUser `json:"user"`
-}
-
-// LoginJSONBody defines parameters for Login.
-type LoginJSONBody struct {
-	User LoginUser `json:"user"`
-}
-
-// CreateArticleJSONRequestBody defines body for CreateArticle for application/json ContentType.
-type CreateArticleJSONRequestBody CreateArticleJSONBody
-
-// UpdateArticleJSONRequestBody defines body for UpdateArticle for application/json ContentType.
-type UpdateArticleJSONRequestBody UpdateArticleJSONBody
-
-// CreateArticleCommentJSONRequestBody defines body for CreateArticleComment for application/json ContentType.
-type CreateArticleCommentJSONRequestBody CreateArticleCommentJSONBody
-
-// UpdateCurrentUserJSONRequestBody defines body for UpdateCurrentUser for application/json ContentType.
-type UpdateCurrentUserJSONRequestBody UpdateCurrentUserJSONBody
-
-// CreateUserJSONRequestBody defines body for CreateUser for application/json ContentType.
-type CreateUserJSONRequestBody CreateUserJSONBody
-
-// LoginJSONRequestBody defines body for Login for application/json ContentType.
-type LoginJSONRequestBody LoginJSONBody
-
-// RequestEditorFn  is the function signature for the RequestEditor callback function
-type RequestEditorFn func(ctx context.Context, req *http.Request) error
-
-// Doer performs HTTP requests.
-//
-// The standard http.Client implements this interface.
-type HttpRequestDoer interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
-// Client which conforms to the OpenAPI3 specification for this service.
-type Client struct {
-	// The endpoint of the server conforming to this interface, with scheme,
-	// https://api.deepmap.com for example. This can contain a path relative
-	// to the server, such as https://api.deepmap.com/dev-test, and all the
-	// paths in the swagger spec will be appended to the server.
-	Server string
-
-	// Doer for performing requests, typically a *http.Client with any
-	// customized settings, such as certificate chains.
-	Client HttpRequestDoer
-
-	// A list of callbacks for modifying requests which are generated before sending over
-	// the network.
-	RequestEditors []RequestEditorFn
-}
-
-// ClientOption allows setting custom parameters during construction
-type ClientOption func(*Client) error
-
-// Creates a new Client, with reasonable defaults
-func NewClient(server string, opts ...ClientOption) (*Client, error) {
-	// create a client with sane default values
-	client := Client{
-		Server: server,
-	}
-	// mutate client and add all optional params
-	for _, o := range opts {
-		if err := o(&client); err != nil {
-			return nil, err
-		}
-	}
-	// ensure the server URL always has a trailing slash
-	if !strings.HasSuffix(client.Server, "/") {
-		client.Server += "/"
-	}
-	// create httpClient, if not already present
-	if client.Client == nil {
-		client.Client = &http.Client{}
-	}
-	return &client, nil
-}
-
-// WithHTTPClient allows overriding the default Doer, which is
-// automatically created using http.Client. This is useful for tests.
-func WithHTTPClient(doer HttpRequestDoer) ClientOption {
-	return func(c *Client) error {
-		c.Client = doer
-		return nil
-	}
-}
-
-// WithRequestEditorFn allows setting up a callback function, which will be
-// called right before sending the request. This can be used to mutate the request.
-func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
-	return func(c *Client) error {
-		c.RequestEditors = append(c.RequestEditors, fn)
-		return nil
-	}
-}
-
-// The interface specification for the client above.
-type ClientInterface interface {
-	// GetArticles request
-	GetArticles(ctx context.Context, params *GetArticlesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// CreateArticle request with any body
-	CreateArticleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	CreateArticle(ctx context.Context, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetArticlesFeed request
-	GetArticlesFeed(ctx context.Context, params *GetArticlesFeedParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DeleteArticle request
-	DeleteArticle(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetArticle request
-	GetArticle(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UpdateArticle request with any body
-	UpdateArticleWithBody(ctx context.Context, slug string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	UpdateArticle(ctx context.Context, slug string, body UpdateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetArticleComments request
-	GetArticleComments(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// CreateArticleComment request with any body
-	CreateArticleCommentWithBody(ctx context.Context, slug string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	CreateArticleComment(ctx context.Context, slug string, body CreateArticleCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DeleteArticleComment request
-	DeleteArticleComment(ctx context.Context, slug string, id int, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DeleteArticleFavorite request
-	DeleteArticleFavorite(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// CreateArticleFavorite request
-	CreateArticleFavorite(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetProfileByUsername request
-	GetProfileByUsername(ctx context.Context, username string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UnfollowUserByUsername request
-	UnfollowUserByUsername(ctx context.Context, username string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// FollowUserByUsername request
-	FollowUserByUsername(ctx context.Context, username string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetTags request
-	GetTags(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetCurrentUser request
-	GetCurrentUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UpdateCurrentUser request with any body
-	UpdateCurrentUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	UpdateCurrentUser(ctx context.Context, body UpdateCurrentUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// CreateUser request with any body
-	CreateUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	CreateUser(ctx context.Context, body CreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// Login request with any body
-	LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-}
-
-func (c *Client) GetArticles(ctx context.Context, params *GetArticlesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetArticlesRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreateArticleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateArticleRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreateArticle(ctx context.Context, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateArticleRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetArticlesFeed(ctx context.Context, params *GetArticlesFeedParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetArticlesFeedRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DeleteArticle(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteArticleRequest(c.Server, slug)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetArticle(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetArticleRequest(c.Server, slug)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdateArticleWithBody(ctx context.Context, slug string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateArticleRequestWithBody(c.Server, slug, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdateArticle(ctx context.Context, slug string, body UpdateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateArticleRequest(c.Server, slug, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetArticleComments(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetArticleCommentsRequest(c.Server, slug)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreateArticleCommentWithBody(ctx context.Context, slug string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateArticleCommentRequestWithBody(c.Server, slug, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreateArticleComment(ctx context.Context, slug string, body CreateArticleCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateArticleCommentRequest(c.Server, slug, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DeleteArticleComment(ctx context.Context, slug string, id int, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteArticleCommentRequest(c.Server, slug, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DeleteArticleFavorite(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteArticleFavoriteRequest(c.Server, slug)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreateArticleFavorite(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateArticleFavoriteRequest(c.Server, slug)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetProfileByUsername(ctx context.Context, username string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetProfileByUsernameRequest(c.Server, username)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UnfollowUserByUsername(ctx context.Context, username string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUnfollowUserByUsernameRequest(c.Server, username)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) FollowUserByUsername(ctx context.Context, username string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewFollowUserByUsernameRequest(c.Server, username)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetTags(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetTagsRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetCurrentUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetCurrentUserRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdateCurrentUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateCurrentUserRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdateCurrentUser(ctx context.Context, body UpdateCurrentUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateCurrentUserRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreateUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateUserRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreateUser(ctx context.Context, body CreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateUserRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewLoginRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewLoginRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// NewGetArticlesRequest generates requests for GetArticles
-func NewGetArticlesRequest(server string, params *GetArticlesParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/articles")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	queryValues := queryURL.Query()
-
-	if params.Tag != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "tag", runtime.ParamLocationQuery, *params.Tag); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.Author != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "author", runtime.ParamLocationQuery, *params.Author); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.Favorited != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "favorited", runtime.ParamLocationQuery, *params.Favorited); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.Offset != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.Limit != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	queryURL.RawQuery = queryValues.Encode()
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewCreateArticleRequest calls the generic CreateArticle builder with application/json body
-func NewCreateArticleRequest(server string, body CreateArticleJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewCreateArticleRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewCreateArticleRequestWithBody generates requests for CreateArticle with any type of body
-func NewCreateArticleRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/articles")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewGetArticlesFeedRequest generates requests for GetArticlesFeed
-func NewGetArticlesFeedRequest(server string, params *GetArticlesFeedParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/articles/feed")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	queryValues := queryURL.Query()
-
-	if params.Offset != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.Limit != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	queryURL.RawQuery = queryValues.Encode()
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewDeleteArticleRequest generates requests for DeleteArticle
-func NewDeleteArticleRequest(server string, slug string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "slug", runtime.ParamLocationPath, slug)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/articles/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetArticleRequest generates requests for GetArticle
-func NewGetArticleRequest(server string, slug string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "slug", runtime.ParamLocationPath, slug)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/articles/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewUpdateArticleRequest calls the generic UpdateArticle builder with application/json body
-func NewUpdateArticleRequest(server string, slug string, body UpdateArticleJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewUpdateArticleRequestWithBody(server, slug, "application/json", bodyReader)
-}
-
-// NewUpdateArticleRequestWithBody generates requests for UpdateArticle with any type of body
-func NewUpdateArticleRequestWithBody(server string, slug string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "slug", runtime.ParamLocationPath, slug)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/articles/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PUT", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewGetArticleCommentsRequest generates requests for GetArticleComments
-func NewGetArticleCommentsRequest(server string, slug string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "slug", runtime.ParamLocationPath, slug)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/articles/%s/comments", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewCreateArticleCommentRequest calls the generic CreateArticleComment builder with application/json body
-func NewCreateArticleCommentRequest(server string, slug string, body CreateArticleCommentJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewCreateArticleCommentRequestWithBody(server, slug, "application/json", bodyReader)
-}
-
-// NewCreateArticleCommentRequestWithBody generates requests for CreateArticleComment with any type of body
-func NewCreateArticleCommentRequestWithBody(server string, slug string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "slug", runtime.ParamLocationPath, slug)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/articles/%s/comments", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewDeleteArticleCommentRequest generates requests for DeleteArticleComment
-func NewDeleteArticleCommentRequest(server string, slug string, id int) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "slug", runtime.ParamLocationPath, slug)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/articles/%s/comments/%s", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewDeleteArticleFavoriteRequest generates requests for DeleteArticleFavorite
-func NewDeleteArticleFavoriteRequest(server string, slug string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "slug", runtime.ParamLocationPath, slug)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/articles/%s/favorite", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewCreateArticleFavoriteRequest generates requests for CreateArticleFavorite
-func NewCreateArticleFavoriteRequest(server string, slug string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "slug", runtime.ParamLocationPath, slug)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/articles/%s/favorite", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetProfileByUsernameRequest generates requests for GetProfileByUsername
-func NewGetProfileByUsernameRequest(server string, username string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "username", runtime.ParamLocationPath, username)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/profiles/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewUnfollowUserByUsernameRequest generates requests for UnfollowUserByUsername
-func NewUnfollowUserByUsernameRequest(server string, username string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "username", runtime.ParamLocationPath, username)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/profiles/%s/follow", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewFollowUserByUsernameRequest generates requests for FollowUserByUsername
-func NewFollowUserByUsernameRequest(server string, username string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "username", runtime.ParamLocationPath, username)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/profiles/%s/follow", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetTagsRequest generates requests for GetTags
-func NewGetTagsRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/tags")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetCurrentUserRequest generates requests for GetCurrentUser
-func NewGetCurrentUserRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/user")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewUpdateCurrentUserRequest calls the generic UpdateCurrentUser builder with application/json body
-func NewUpdateCurrentUserRequest(server string, body UpdateCurrentUserJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewUpdateCurrentUserRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewUpdateCurrentUserRequestWithBody generates requests for UpdateCurrentUser with any type of body
-func NewUpdateCurrentUserRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/user")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PUT", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewCreateUserRequest calls the generic CreateUser builder with application/json body
-func NewCreateUserRequest(server string, body CreateUserJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewCreateUserRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewCreateUserRequestWithBody generates requests for CreateUser with any type of body
-func NewCreateUserRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/users")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewLoginRequest calls the generic Login builder with application/json body
-func NewLoginRequest(server string, body LoginJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewLoginRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewLoginRequestWithBody generates requests for Login with any type of body
-func NewLoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/users/login")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
-	for _, r := range c.RequestEditors {
-		if err := r(ctx, req); err != nil {
-			return err
-		}
-	}
-	for _, r := range additionalEditors {
-		if err := r(ctx, req); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// ClientWithResponses builds on ClientInterface to offer response payloads
-type ClientWithResponses struct {
-	ClientInterface
-}
-
-// NewClientWithResponses creates a new ClientWithResponses, which wraps
-// Client with return type handling
-func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithResponses, error) {
-	client, err := NewClient(server, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &ClientWithResponses{client}, nil
-}
-
-// WithBaseURL overrides the baseURL.
-func WithBaseURL(baseURL string) ClientOption {
-	return func(c *Client) error {
-		newBaseURL, err := url.Parse(baseURL)
-		if err != nil {
-			return err
-		}
-		c.Server = newBaseURL.String()
-		return nil
-	}
-}
-
-// ClientWithResponsesInterface is the interface specification for the client with responses above.
-type ClientWithResponsesInterface interface {
-	// GetArticles request
-	GetArticlesWithResponse(ctx context.Context, params *GetArticlesParams, reqEditors ...RequestEditorFn) (*GetArticlesResponse, error)
-
-	// CreateArticle request with any body
-	CreateArticleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error)
-
-	CreateArticleWithResponse(ctx context.Context, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error)
-
-	// GetArticlesFeed request
-	GetArticlesFeedWithResponse(ctx context.Context, params *GetArticlesFeedParams, reqEditors ...RequestEditorFn) (*GetArticlesFeedResponse, error)
-
-	// DeleteArticle request
-	DeleteArticleWithResponse(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*DeleteArticleResponse, error)
-
-	// GetArticle request
-	GetArticleWithResponse(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*GetArticleResponse, error)
-
-	// UpdateArticle request with any body
-	UpdateArticleWithBodyWithResponse(ctx context.Context, slug string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateArticleResponse, error)
-
-	UpdateArticleWithResponse(ctx context.Context, slug string, body UpdateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateArticleResponse, error)
-
-	// GetArticleComments request
-	GetArticleCommentsWithResponse(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*GetArticleCommentsResponse, error)
-
-	// CreateArticleComment request with any body
-	CreateArticleCommentWithBodyWithResponse(ctx context.Context, slug string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateArticleCommentResponse, error)
-
-	CreateArticleCommentWithResponse(ctx context.Context, slug string, body CreateArticleCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateArticleCommentResponse, error)
-
-	// DeleteArticleComment request
-	DeleteArticleCommentWithResponse(ctx context.Context, slug string, id int, reqEditors ...RequestEditorFn) (*DeleteArticleCommentResponse, error)
-
-	// DeleteArticleFavorite request
-	DeleteArticleFavoriteWithResponse(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*DeleteArticleFavoriteResponse, error)
-
-	// CreateArticleFavorite request
-	CreateArticleFavoriteWithResponse(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*CreateArticleFavoriteResponse, error)
-
-	// GetProfileByUsername request
-	GetProfileByUsernameWithResponse(ctx context.Context, username string, reqEditors ...RequestEditorFn) (*GetProfileByUsernameResponse, error)
-
-	// UnfollowUserByUsername request
-	UnfollowUserByUsernameWithResponse(ctx context.Context, username string, reqEditors ...RequestEditorFn) (*UnfollowUserByUsernameResponse, error)
-
-	// FollowUserByUsername request
-	FollowUserByUsernameWithResponse(ctx context.Context, username string, reqEditors ...RequestEditorFn) (*FollowUserByUsernameResponse, error)
-
-	// GetTags request
-	GetTagsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetTagsResponse, error)
-
-	// GetCurrentUser request
-	GetCurrentUserWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetCurrentUserResponse, error)
-
-	// UpdateCurrentUser request with any body
-	UpdateCurrentUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCurrentUserResponse, error)
-
-	UpdateCurrentUserWithResponse(ctx context.Context, body UpdateCurrentUserJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCurrentUserResponse, error)
-
-	// CreateUser request with any body
-	CreateUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateUserResponse, error)
-
-	CreateUserWithResponse(ctx context.Context, body CreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateUserResponse, error)
-
-	// Login request with any body
-	LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error)
-
-	LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error)
-}
-
-type GetArticlesResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Articles      []Article `json:"articles"`
-		ArticlesCount int       `json:"articlesCount"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r GetArticlesResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetArticlesResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type CreateArticleResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON201      *struct {
-		Article Article `json:"article"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r CreateArticleResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r CreateArticleResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetArticlesFeedResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Articles      []Article `json:"articles"`
-		ArticlesCount int       `json:"articlesCount"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r GetArticlesFeedResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetArticlesFeedResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DeleteArticleResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON422      *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r DeleteArticleResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DeleteArticleResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetArticleResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Article Article `json:"article"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r GetArticleResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetArticleResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type UpdateArticleResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Article Article `json:"article"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r UpdateArticleResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UpdateArticleResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetArticleCommentsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Comments []Comment `json:"comments"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r GetArticleCommentsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetArticleCommentsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type CreateArticleCommentResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Comment Comment `json:"comment"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r CreateArticleCommentResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r CreateArticleCommentResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DeleteArticleCommentResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON422      *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r DeleteArticleCommentResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DeleteArticleCommentResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DeleteArticleFavoriteResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Article Article `json:"article"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r DeleteArticleFavoriteResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DeleteArticleFavoriteResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type CreateArticleFavoriteResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Article Article `json:"article"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r CreateArticleFavoriteResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r CreateArticleFavoriteResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetProfileByUsernameResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Profile Profile `json:"profile"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r GetProfileByUsernameResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetProfileByUsernameResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type UnfollowUserByUsernameResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Profile Profile `json:"profile"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r UnfollowUserByUsernameResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UnfollowUserByUsernameResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type FollowUserByUsernameResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Profile Profile `json:"profile"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r FollowUserByUsernameResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r FollowUserByUsernameResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetTagsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Tags []string `json:"tags"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r GetTagsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetTagsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetCurrentUserResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		User User `json:"user"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r GetCurrentUserResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetCurrentUserResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type UpdateCurrentUserResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		User User `json:"user"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r UpdateCurrentUserResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UpdateCurrentUserResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type CreateUserResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON201      *struct {
-		User User `json:"user"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r CreateUserResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r CreateUserResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type LoginResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		User User `json:"user"`
-	}
-	JSON422 *GenericErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r LoginResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r LoginResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// GetArticlesWithResponse request returning *GetArticlesResponse
-func (c *ClientWithResponses) GetArticlesWithResponse(ctx context.Context, params *GetArticlesParams, reqEditors ...RequestEditorFn) (*GetArticlesResponse, error) {
-	rsp, err := c.GetArticles(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetArticlesResponse(rsp)
-}
-
-// CreateArticleWithBodyWithResponse request with arbitrary body returning *CreateArticleResponse
-func (c *ClientWithResponses) CreateArticleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error) {
-	rsp, err := c.CreateArticleWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreateArticleResponse(rsp)
-}
-
-func (c *ClientWithResponses) CreateArticleWithResponse(ctx context.Context, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error) {
-	rsp, err := c.CreateArticle(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreateArticleResponse(rsp)
-}
-
-// GetArticlesFeedWithResponse request returning *GetArticlesFeedResponse
-func (c *ClientWithResponses) GetArticlesFeedWithResponse(ctx context.Context, params *GetArticlesFeedParams, reqEditors ...RequestEditorFn) (*GetArticlesFeedResponse, error) {
-	rsp, err := c.GetArticlesFeed(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetArticlesFeedResponse(rsp)
-}
-
-// DeleteArticleWithResponse request returning *DeleteArticleResponse
-func (c *ClientWithResponses) DeleteArticleWithResponse(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*DeleteArticleResponse, error) {
-	rsp, err := c.DeleteArticle(ctx, slug, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDeleteArticleResponse(rsp)
-}
-
-// GetArticleWithResponse request returning *GetArticleResponse
-func (c *ClientWithResponses) GetArticleWithResponse(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*GetArticleResponse, error) {
-	rsp, err := c.GetArticle(ctx, slug, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetArticleResponse(rsp)
-}
-
-// UpdateArticleWithBodyWithResponse request with arbitrary body returning *UpdateArticleResponse
-func (c *ClientWithResponses) UpdateArticleWithBodyWithResponse(ctx context.Context, slug string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateArticleResponse, error) {
-	rsp, err := c.UpdateArticleWithBody(ctx, slug, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdateArticleResponse(rsp)
-}
-
-func (c *ClientWithResponses) UpdateArticleWithResponse(ctx context.Context, slug string, body UpdateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateArticleResponse, error) {
-	rsp, err := c.UpdateArticle(ctx, slug, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdateArticleResponse(rsp)
-}
-
-// GetArticleCommentsWithResponse request returning *GetArticleCommentsResponse
-func (c *ClientWithResponses) GetArticleCommentsWithResponse(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*GetArticleCommentsResponse, error) {
-	rsp, err := c.GetArticleComments(ctx, slug, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetArticleCommentsResponse(rsp)
-}
-
-// CreateArticleCommentWithBodyWithResponse request with arbitrary body returning *CreateArticleCommentResponse
-func (c *ClientWithResponses) CreateArticleCommentWithBodyWithResponse(ctx context.Context, slug string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateArticleCommentResponse, error) {
-	rsp, err := c.CreateArticleCommentWithBody(ctx, slug, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreateArticleCommentResponse(rsp)
-}
-
-func (c *ClientWithResponses) CreateArticleCommentWithResponse(ctx context.Context, slug string, body CreateArticleCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateArticleCommentResponse, error) {
-	rsp, err := c.CreateArticleComment(ctx, slug, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreateArticleCommentResponse(rsp)
-}
-
-// DeleteArticleCommentWithResponse request returning *DeleteArticleCommentResponse
-func (c *ClientWithResponses) DeleteArticleCommentWithResponse(ctx context.Context, slug string, id int, reqEditors ...RequestEditorFn) (*DeleteArticleCommentResponse, error) {
-	rsp, err := c.DeleteArticleComment(ctx, slug, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDeleteArticleCommentResponse(rsp)
-}
-
-// DeleteArticleFavoriteWithResponse request returning *DeleteArticleFavoriteResponse
-func (c *ClientWithResponses) DeleteArticleFavoriteWithResponse(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*DeleteArticleFavoriteResponse, error) {
-	rsp, err := c.DeleteArticleFavorite(ctx, slug, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDeleteArticleFavoriteResponse(rsp)
-}
-
-// CreateArticleFavoriteWithResponse request returning *CreateArticleFavoriteResponse
-func (c *ClientWithResponses) CreateArticleFavoriteWithResponse(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*CreateArticleFavoriteResponse, error) {
-	rsp, err := c.CreateArticleFavorite(ctx, slug, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreateArticleFavoriteResponse(rsp)
-}
-
-// GetProfileByUsernameWithResponse request returning *GetProfileByUsernameResponse
-func (c *ClientWithResponses) GetProfileByUsernameWithResponse(ctx context.Context, username string, reqEditors ...RequestEditorFn) (*GetProfileByUsernameResponse, error) {
-	rsp, err := c.GetProfileByUsername(ctx, username, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetProfileByUsernameResponse(rsp)
-}
-
-// UnfollowUserByUsernameWithResponse request returning *UnfollowUserByUsernameResponse
-func (c *ClientWithResponses) UnfollowUserByUsernameWithResponse(ctx context.Context, username string, reqEditors ...RequestEditorFn) (*UnfollowUserByUsernameResponse, error) {
-	rsp, err := c.UnfollowUserByUsername(ctx, username, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUnfollowUserByUsernameResponse(rsp)
-}
-
-// FollowUserByUsernameWithResponse request returning *FollowUserByUsernameResponse
-func (c *ClientWithResponses) FollowUserByUsernameWithResponse(ctx context.Context, username string, reqEditors ...RequestEditorFn) (*FollowUserByUsernameResponse, error) {
-	rsp, err := c.FollowUserByUsername(ctx, username, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseFollowUserByUsernameResponse(rsp)
-}
-
-// GetTagsWithResponse request returning *GetTagsResponse
-func (c *ClientWithResponses) GetTagsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetTagsResponse, error) {
-	rsp, err := c.GetTags(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetTagsResponse(rsp)
-}
-
-// GetCurrentUserWithResponse request returning *GetCurrentUserResponse
-func (c *ClientWithResponses) GetCurrentUserWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetCurrentUserResponse, error) {
-	rsp, err := c.GetCurrentUser(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetCurrentUserResponse(rsp)
-}
-
-// UpdateCurrentUserWithBodyWithResponse request with arbitrary body returning *UpdateCurrentUserResponse
-func (c *ClientWithResponses) UpdateCurrentUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCurrentUserResponse, error) {
-	rsp, err := c.UpdateCurrentUserWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdateCurrentUserResponse(rsp)
-}
-
-func (c *ClientWithResponses) UpdateCurrentUserWithResponse(ctx context.Context, body UpdateCurrentUserJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCurrentUserResponse, error) {
-	rsp, err := c.UpdateCurrentUser(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdateCurrentUserResponse(rsp)
-}
-
-// CreateUserWithBodyWithResponse request with arbitrary body returning *CreateUserResponse
-func (c *ClientWithResponses) CreateUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateUserResponse, error) {
-	rsp, err := c.CreateUserWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreateUserResponse(rsp)
-}
-
-func (c *ClientWithResponses) CreateUserWithResponse(ctx context.Context, body CreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateUserResponse, error) {
-	rsp, err := c.CreateUser(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreateUserResponse(rsp)
-}
-
-// LoginWithBodyWithResponse request with arbitrary body returning *LoginResponse
-func (c *ClientWithResponses) LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
-	rsp, err := c.LoginWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseLoginResponse(rsp)
-}
-
-func (c *ClientWithResponses) LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
-	rsp, err := c.Login(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseLoginResponse(rsp)
-}
-
-// ParseGetArticlesResponse parses an HTTP response from a GetArticlesWithResponse call
-func ParseGetArticlesResponse(rsp *http.Response) (*GetArticlesResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetArticlesResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Articles      []Article `json:"articles"`
-			ArticlesCount int       `json:"articlesCount"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseCreateArticleResponse parses an HTTP response from a CreateArticleWithResponse call
-func ParseCreateArticleResponse(rsp *http.Response) (*CreateArticleResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &CreateArticleResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest struct {
-			Article Article `json:"article"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON201 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetArticlesFeedResponse parses an HTTP response from a GetArticlesFeedWithResponse call
-func ParseGetArticlesFeedResponse(rsp *http.Response) (*GetArticlesFeedResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetArticlesFeedResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Articles      []Article `json:"articles"`
-			ArticlesCount int       `json:"articlesCount"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseDeleteArticleResponse parses an HTTP response from a DeleteArticleWithResponse call
-func ParseDeleteArticleResponse(rsp *http.Response) (*DeleteArticleResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DeleteArticleResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetArticleResponse parses an HTTP response from a GetArticleWithResponse call
-func ParseGetArticleResponse(rsp *http.Response) (*GetArticleResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetArticleResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Article Article `json:"article"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseUpdateArticleResponse parses an HTTP response from a UpdateArticleWithResponse call
-func ParseUpdateArticleResponse(rsp *http.Response) (*UpdateArticleResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UpdateArticleResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Article Article `json:"article"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetArticleCommentsResponse parses an HTTP response from a GetArticleCommentsWithResponse call
-func ParseGetArticleCommentsResponse(rsp *http.Response) (*GetArticleCommentsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetArticleCommentsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Comments []Comment `json:"comments"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseCreateArticleCommentResponse parses an HTTP response from a CreateArticleCommentWithResponse call
-func ParseCreateArticleCommentResponse(rsp *http.Response) (*CreateArticleCommentResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &CreateArticleCommentResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Comment Comment `json:"comment"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseDeleteArticleCommentResponse parses an HTTP response from a DeleteArticleCommentWithResponse call
-func ParseDeleteArticleCommentResponse(rsp *http.Response) (*DeleteArticleCommentResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DeleteArticleCommentResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseDeleteArticleFavoriteResponse parses an HTTP response from a DeleteArticleFavoriteWithResponse call
-func ParseDeleteArticleFavoriteResponse(rsp *http.Response) (*DeleteArticleFavoriteResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DeleteArticleFavoriteResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Article Article `json:"article"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseCreateArticleFavoriteResponse parses an HTTP response from a CreateArticleFavoriteWithResponse call
-func ParseCreateArticleFavoriteResponse(rsp *http.Response) (*CreateArticleFavoriteResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &CreateArticleFavoriteResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Article Article `json:"article"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetProfileByUsernameResponse parses an HTTP response from a GetProfileByUsernameWithResponse call
-func ParseGetProfileByUsernameResponse(rsp *http.Response) (*GetProfileByUsernameResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetProfileByUsernameResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Profile Profile `json:"profile"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseUnfollowUserByUsernameResponse parses an HTTP response from a UnfollowUserByUsernameWithResponse call
-func ParseUnfollowUserByUsernameResponse(rsp *http.Response) (*UnfollowUserByUsernameResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UnfollowUserByUsernameResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Profile Profile `json:"profile"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseFollowUserByUsernameResponse parses an HTTP response from a FollowUserByUsernameWithResponse call
-func ParseFollowUserByUsernameResponse(rsp *http.Response) (*FollowUserByUsernameResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &FollowUserByUsernameResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Profile Profile `json:"profile"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetTagsResponse parses an HTTP response from a GetTagsWithResponse call
-func ParseGetTagsResponse(rsp *http.Response) (*GetTagsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetTagsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Tags []string `json:"tags"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetCurrentUserResponse parses an HTTP response from a GetCurrentUserWithResponse call
-func ParseGetCurrentUserResponse(rsp *http.Response) (*GetCurrentUserResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetCurrentUserResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			User User `json:"user"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseUpdateCurrentUserResponse parses an HTTP response from a UpdateCurrentUserWithResponse call
-func ParseUpdateCurrentUserResponse(rsp *http.Response) (*UpdateCurrentUserResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UpdateCurrentUserResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			User User `json:"user"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseCreateUserResponse parses an HTTP response from a CreateUserWithResponse call
-func ParseCreateUserResponse(rsp *http.Response) (*CreateUserResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &CreateUserResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest struct {
-			User User `json:"user"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON201 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseLoginResponse parses an HTTP response from a LoginWithResponse call
-func ParseLoginResponse(rsp *http.Response) (*LoginResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &LoginResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			User User `json:"user"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest GenericErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -3402,6 +467,1238 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/users", wrapper.CreateUser)
 	router.POST(baseURL+"/users/login", wrapper.Login)
 
+}
+
+type EmptyOkResponseResponse struct {
+}
+
+type GenericErrorJSONResponse GenericErrorModel
+
+type MultipleArticlesResponseJSONResponse struct {
+	Articles      []Article `json:"articles"`
+	ArticlesCount int       `json:"articlesCount"`
+}
+
+type MultipleCommentsResponseJSONResponse struct {
+	Comments []Comment `json:"comments"`
+}
+
+type ProfileResponseJSONResponse struct {
+	Profile Profile `json:"profile"`
+}
+
+type SingleArticleResponseJSONResponse struct {
+	Article Article `json:"article"`
+}
+
+type SingleCommentResponseJSONResponse struct {
+	Comment Comment `json:"comment"`
+}
+
+type TagsResponseJSONResponse struct {
+	Tags []string `json:"tags"`
+}
+
+type UnauthorizedResponse struct {
+}
+
+type UserResponseJSONResponse struct {
+	User User `json:"user"`
+}
+
+type GetArticlesRequestObject struct {
+	Params GetArticlesParams
+}
+
+type GetArticlesResponseObject interface {
+	VisitGetArticlesResponse(w http.ResponseWriter) error
+}
+
+type GetArticles200JSONResponse struct {
+	MultipleArticlesResponseJSONResponse
+}
+
+func (response GetArticles200JSONResponse) VisitGetArticlesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetArticles401Response = UnauthorizedResponse
+
+func (response GetArticles401Response) VisitGetArticlesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type GetArticles422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response GetArticles422JSONResponse) VisitGetArticlesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateArticleRequestObject struct {
+	Body *CreateArticleJSONRequestBody
+}
+
+type CreateArticleResponseObject interface {
+	VisitCreateArticleResponse(w http.ResponseWriter) error
+}
+
+type CreateArticle201JSONResponse struct {
+	SingleArticleResponseJSONResponse
+}
+
+func (response CreateArticle201JSONResponse) VisitCreateArticleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateArticle401Response = UnauthorizedResponse
+
+func (response CreateArticle401Response) VisitCreateArticleResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type CreateArticle422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response CreateArticle422JSONResponse) VisitCreateArticleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetArticlesFeedRequestObject struct {
+	Params GetArticlesFeedParams
+}
+
+type GetArticlesFeedResponseObject interface {
+	VisitGetArticlesFeedResponse(w http.ResponseWriter) error
+}
+
+type GetArticlesFeed200JSONResponse struct {
+	MultipleArticlesResponseJSONResponse
+}
+
+func (response GetArticlesFeed200JSONResponse) VisitGetArticlesFeedResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetArticlesFeed401Response = UnauthorizedResponse
+
+func (response GetArticlesFeed401Response) VisitGetArticlesFeedResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type GetArticlesFeed422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response GetArticlesFeed422JSONResponse) VisitGetArticlesFeedResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteArticleRequestObject struct {
+	Slug string `json:"slug"`
+}
+
+type DeleteArticleResponseObject interface {
+	VisitDeleteArticleResponse(w http.ResponseWriter) error
+}
+
+type DeleteArticle200Response = EmptyOkResponseResponse
+
+func (response DeleteArticle200Response) VisitDeleteArticleResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type DeleteArticle401Response = UnauthorizedResponse
+
+func (response DeleteArticle401Response) VisitDeleteArticleResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type DeleteArticle422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response DeleteArticle422JSONResponse) VisitDeleteArticleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetArticleRequestObject struct {
+	Slug string `json:"slug"`
+}
+
+type GetArticleResponseObject interface {
+	VisitGetArticleResponse(w http.ResponseWriter) error
+}
+
+type GetArticle200JSONResponse struct {
+	SingleArticleResponseJSONResponse
+}
+
+func (response GetArticle200JSONResponse) VisitGetArticleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetArticle422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response GetArticle422JSONResponse) VisitGetArticleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateArticleRequestObject struct {
+	Slug string `json:"slug"`
+	Body *UpdateArticleJSONRequestBody
+}
+
+type UpdateArticleResponseObject interface {
+	VisitUpdateArticleResponse(w http.ResponseWriter) error
+}
+
+type UpdateArticle200JSONResponse struct {
+	SingleArticleResponseJSONResponse
+}
+
+func (response UpdateArticle200JSONResponse) VisitUpdateArticleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateArticle401Response = UnauthorizedResponse
+
+func (response UpdateArticle401Response) VisitUpdateArticleResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type UpdateArticle422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response UpdateArticle422JSONResponse) VisitUpdateArticleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetArticleCommentsRequestObject struct {
+	Slug string `json:"slug"`
+}
+
+type GetArticleCommentsResponseObject interface {
+	VisitGetArticleCommentsResponse(w http.ResponseWriter) error
+}
+
+type GetArticleComments200JSONResponse struct {
+	MultipleCommentsResponseJSONResponse
+}
+
+func (response GetArticleComments200JSONResponse) VisitGetArticleCommentsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetArticleComments401Response = UnauthorizedResponse
+
+func (response GetArticleComments401Response) VisitGetArticleCommentsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type GetArticleComments422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response GetArticleComments422JSONResponse) VisitGetArticleCommentsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateArticleCommentRequestObject struct {
+	Slug string `json:"slug"`
+	Body *CreateArticleCommentJSONRequestBody
+}
+
+type CreateArticleCommentResponseObject interface {
+	VisitCreateArticleCommentResponse(w http.ResponseWriter) error
+}
+
+type CreateArticleComment200JSONResponse struct {
+	SingleCommentResponseJSONResponse
+}
+
+func (response CreateArticleComment200JSONResponse) VisitCreateArticleCommentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateArticleComment401Response = UnauthorizedResponse
+
+func (response CreateArticleComment401Response) VisitCreateArticleCommentResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type CreateArticleComment422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response CreateArticleComment422JSONResponse) VisitCreateArticleCommentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteArticleCommentRequestObject struct {
+	Slug string `json:"slug"`
+	Id   int    `json:"id"`
+}
+
+type DeleteArticleCommentResponseObject interface {
+	VisitDeleteArticleCommentResponse(w http.ResponseWriter) error
+}
+
+type DeleteArticleComment200Response = EmptyOkResponseResponse
+
+func (response DeleteArticleComment200Response) VisitDeleteArticleCommentResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type DeleteArticleComment401Response = UnauthorizedResponse
+
+func (response DeleteArticleComment401Response) VisitDeleteArticleCommentResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type DeleteArticleComment422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response DeleteArticleComment422JSONResponse) VisitDeleteArticleCommentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteArticleFavoriteRequestObject struct {
+	Slug string `json:"slug"`
+}
+
+type DeleteArticleFavoriteResponseObject interface {
+	VisitDeleteArticleFavoriteResponse(w http.ResponseWriter) error
+}
+
+type DeleteArticleFavorite200JSONResponse struct {
+	SingleArticleResponseJSONResponse
+}
+
+func (response DeleteArticleFavorite200JSONResponse) VisitDeleteArticleFavoriteResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteArticleFavorite401Response = UnauthorizedResponse
+
+func (response DeleteArticleFavorite401Response) VisitDeleteArticleFavoriteResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type DeleteArticleFavorite422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response DeleteArticleFavorite422JSONResponse) VisitDeleteArticleFavoriteResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateArticleFavoriteRequestObject struct {
+	Slug string `json:"slug"`
+}
+
+type CreateArticleFavoriteResponseObject interface {
+	VisitCreateArticleFavoriteResponse(w http.ResponseWriter) error
+}
+
+type CreateArticleFavorite200JSONResponse struct {
+	SingleArticleResponseJSONResponse
+}
+
+func (response CreateArticleFavorite200JSONResponse) VisitCreateArticleFavoriteResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateArticleFavorite401Response = UnauthorizedResponse
+
+func (response CreateArticleFavorite401Response) VisitCreateArticleFavoriteResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type CreateArticleFavorite422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response CreateArticleFavorite422JSONResponse) VisitCreateArticleFavoriteResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetProfileByUsernameRequestObject struct {
+	Username string `json:"username"`
+}
+
+type GetProfileByUsernameResponseObject interface {
+	VisitGetProfileByUsernameResponse(w http.ResponseWriter) error
+}
+
+type GetProfileByUsername200JSONResponse struct{ ProfileResponseJSONResponse }
+
+func (response GetProfileByUsername200JSONResponse) VisitGetProfileByUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetProfileByUsername401Response = UnauthorizedResponse
+
+func (response GetProfileByUsername401Response) VisitGetProfileByUsernameResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type GetProfileByUsername422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response GetProfileByUsername422JSONResponse) VisitGetProfileByUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UnfollowUserByUsernameRequestObject struct {
+	Username string `json:"username"`
+}
+
+type UnfollowUserByUsernameResponseObject interface {
+	VisitUnfollowUserByUsernameResponse(w http.ResponseWriter) error
+}
+
+type UnfollowUserByUsername200JSONResponse struct{ ProfileResponseJSONResponse }
+
+func (response UnfollowUserByUsername200JSONResponse) VisitUnfollowUserByUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UnfollowUserByUsername401Response = UnauthorizedResponse
+
+func (response UnfollowUserByUsername401Response) VisitUnfollowUserByUsernameResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type UnfollowUserByUsername422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response UnfollowUserByUsername422JSONResponse) VisitUnfollowUserByUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type FollowUserByUsernameRequestObject struct {
+	Username string `json:"username"`
+}
+
+type FollowUserByUsernameResponseObject interface {
+	VisitFollowUserByUsernameResponse(w http.ResponseWriter) error
+}
+
+type FollowUserByUsername200JSONResponse struct{ ProfileResponseJSONResponse }
+
+func (response FollowUserByUsername200JSONResponse) VisitFollowUserByUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type FollowUserByUsername401Response = UnauthorizedResponse
+
+func (response FollowUserByUsername401Response) VisitFollowUserByUsernameResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type FollowUserByUsername422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response FollowUserByUsername422JSONResponse) VisitFollowUserByUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetTagsRequestObject struct {
+}
+
+type GetTagsResponseObject interface {
+	VisitGetTagsResponse(w http.ResponseWriter) error
+}
+
+type GetTags200JSONResponse struct{ TagsResponseJSONResponse }
+
+func (response GetTags200JSONResponse) VisitGetTagsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetTags422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response GetTags422JSONResponse) VisitGetTagsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetCurrentUserRequestObject struct {
+}
+
+type GetCurrentUserResponseObject interface {
+	VisitGetCurrentUserResponse(w http.ResponseWriter) error
+}
+
+type GetCurrentUser200JSONResponse struct{ UserResponseJSONResponse }
+
+func (response GetCurrentUser200JSONResponse) VisitGetCurrentUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetCurrentUser401Response = UnauthorizedResponse
+
+func (response GetCurrentUser401Response) VisitGetCurrentUserResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type GetCurrentUser422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response GetCurrentUser422JSONResponse) VisitGetCurrentUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateCurrentUserRequestObject struct {
+	Body *UpdateCurrentUserJSONRequestBody
+}
+
+type UpdateCurrentUserResponseObject interface {
+	VisitUpdateCurrentUserResponse(w http.ResponseWriter) error
+}
+
+type UpdateCurrentUser200JSONResponse struct{ UserResponseJSONResponse }
+
+func (response UpdateCurrentUser200JSONResponse) VisitUpdateCurrentUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateCurrentUser401Response = UnauthorizedResponse
+
+func (response UpdateCurrentUser401Response) VisitUpdateCurrentUserResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type UpdateCurrentUser422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response UpdateCurrentUser422JSONResponse) VisitUpdateCurrentUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateUserRequestObject struct {
+	Body *CreateUserJSONRequestBody
+}
+
+type CreateUserResponseObject interface {
+	VisitCreateUserResponse(w http.ResponseWriter) error
+}
+
+type CreateUser201JSONResponse struct{ UserResponseJSONResponse }
+
+func (response CreateUser201JSONResponse) VisitCreateUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateUser422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response CreateUser422JSONResponse) VisitCreateUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type LoginRequestObject struct {
+	Body *LoginJSONRequestBody
+}
+
+type LoginResponseObject interface {
+	VisitLoginResponse(w http.ResponseWriter) error
+}
+
+type Login200JSONResponse struct{ UserResponseJSONResponse }
+
+func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type Login401Response = UnauthorizedResponse
+
+func (response Login401Response) VisitLoginResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type Login422JSONResponse struct{ GenericErrorJSONResponse }
+
+func (response Login422JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+// StrictServerInterface represents all server handlers.
+type StrictServerInterface interface {
+	// Get recent articles globally
+	// (GET /articles)
+	GetArticles(ctx context.Context, request GetArticlesRequestObject) (GetArticlesResponseObject, error)
+	// Create an article
+	// (POST /articles)
+	CreateArticle(ctx context.Context, request CreateArticleRequestObject) (CreateArticleResponseObject, error)
+	// Get recent articles from users you follow
+	// (GET /articles/feed)
+	GetArticlesFeed(ctx context.Context, request GetArticlesFeedRequestObject) (GetArticlesFeedResponseObject, error)
+	// Delete an article
+	// (DELETE /articles/{slug})
+	DeleteArticle(ctx context.Context, request DeleteArticleRequestObject) (DeleteArticleResponseObject, error)
+	// Get an article
+	// (GET /articles/{slug})
+	GetArticle(ctx context.Context, request GetArticleRequestObject) (GetArticleResponseObject, error)
+	// Update an article
+	// (PUT /articles/{slug})
+	UpdateArticle(ctx context.Context, request UpdateArticleRequestObject) (UpdateArticleResponseObject, error)
+	// Get comments for an article
+	// (GET /articles/{slug}/comments)
+	GetArticleComments(ctx context.Context, request GetArticleCommentsRequestObject) (GetArticleCommentsResponseObject, error)
+	// Create a comment for an article
+	// (POST /articles/{slug}/comments)
+	CreateArticleComment(ctx context.Context, request CreateArticleCommentRequestObject) (CreateArticleCommentResponseObject, error)
+	// Delete a comment for an article
+	// (DELETE /articles/{slug}/comments/{id})
+	DeleteArticleComment(ctx context.Context, request DeleteArticleCommentRequestObject) (DeleteArticleCommentResponseObject, error)
+	// Unfavorite an article
+	// (DELETE /articles/{slug}/favorite)
+	DeleteArticleFavorite(ctx context.Context, request DeleteArticleFavoriteRequestObject) (DeleteArticleFavoriteResponseObject, error)
+	// Favorite an article
+	// (POST /articles/{slug}/favorite)
+	CreateArticleFavorite(ctx context.Context, request CreateArticleFavoriteRequestObject) (CreateArticleFavoriteResponseObject, error)
+	// Get a profile
+	// (GET /profiles/{username})
+	GetProfileByUsername(ctx context.Context, request GetProfileByUsernameRequestObject) (GetProfileByUsernameResponseObject, error)
+	// Unfollow a user
+	// (DELETE /profiles/{username}/follow)
+	UnfollowUserByUsername(ctx context.Context, request UnfollowUserByUsernameRequestObject) (UnfollowUserByUsernameResponseObject, error)
+	// Follow a user
+	// (POST /profiles/{username}/follow)
+	FollowUserByUsername(ctx context.Context, request FollowUserByUsernameRequestObject) (FollowUserByUsernameResponseObject, error)
+	// Get tags
+	// (GET /tags)
+	GetTags(ctx context.Context, request GetTagsRequestObject) (GetTagsResponseObject, error)
+	// Get current user
+	// (GET /user)
+	GetCurrentUser(ctx context.Context, request GetCurrentUserRequestObject) (GetCurrentUserResponseObject, error)
+	// Update current user
+	// (PUT /user)
+	UpdateCurrentUser(ctx context.Context, request UpdateCurrentUserRequestObject) (UpdateCurrentUserResponseObject, error)
+
+	// (POST /users)
+	CreateUser(ctx context.Context, request CreateUserRequestObject) (CreateUserResponseObject, error)
+	// Existing user login
+	// (POST /users/login)
+	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
+}
+
+type StrictHandlerFunc func(ctx echo.Context, args interface{}) (interface{}, error)
+
+type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares}
+}
+
+type strictHandler struct {
+	ssi         StrictServerInterface
+	middlewares []StrictMiddlewareFunc
+}
+
+// GetArticles operation middleware
+func (sh *strictHandler) GetArticles(ctx echo.Context, params GetArticlesParams) error {
+	var request GetArticlesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetArticles(ctx.Request().Context(), request.(GetArticlesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetArticles")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetArticlesResponseObject); ok {
+		return validResponse.VisitGetArticlesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateArticle operation middleware
+func (sh *strictHandler) CreateArticle(ctx echo.Context) error {
+	var request CreateArticleRequestObject
+
+	var body CreateArticleJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateArticle(ctx.Request().Context(), request.(CreateArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateArticle")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateArticleResponseObject); ok {
+		return validResponse.VisitCreateArticleResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetArticlesFeed operation middleware
+func (sh *strictHandler) GetArticlesFeed(ctx echo.Context, params GetArticlesFeedParams) error {
+	var request GetArticlesFeedRequestObject
+
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetArticlesFeed(ctx.Request().Context(), request.(GetArticlesFeedRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetArticlesFeed")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetArticlesFeedResponseObject); ok {
+		return validResponse.VisitGetArticlesFeedResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// DeleteArticle operation middleware
+func (sh *strictHandler) DeleteArticle(ctx echo.Context, slug string) error {
+	var request DeleteArticleRequestObject
+
+	request.Slug = slug
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteArticle(ctx.Request().Context(), request.(DeleteArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteArticle")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(DeleteArticleResponseObject); ok {
+		return validResponse.VisitDeleteArticleResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetArticle operation middleware
+func (sh *strictHandler) GetArticle(ctx echo.Context, slug string) error {
+	var request GetArticleRequestObject
+
+	request.Slug = slug
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetArticle(ctx.Request().Context(), request.(GetArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetArticle")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetArticleResponseObject); ok {
+		return validResponse.VisitGetArticleResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// UpdateArticle operation middleware
+func (sh *strictHandler) UpdateArticle(ctx echo.Context, slug string) error {
+	var request UpdateArticleRequestObject
+
+	request.Slug = slug
+
+	var body UpdateArticleJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateArticle(ctx.Request().Context(), request.(UpdateArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateArticle")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(UpdateArticleResponseObject); ok {
+		return validResponse.VisitUpdateArticleResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetArticleComments operation middleware
+func (sh *strictHandler) GetArticleComments(ctx echo.Context, slug string) error {
+	var request GetArticleCommentsRequestObject
+
+	request.Slug = slug
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetArticleComments(ctx.Request().Context(), request.(GetArticleCommentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetArticleComments")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetArticleCommentsResponseObject); ok {
+		return validResponse.VisitGetArticleCommentsResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateArticleComment operation middleware
+func (sh *strictHandler) CreateArticleComment(ctx echo.Context, slug string) error {
+	var request CreateArticleCommentRequestObject
+
+	request.Slug = slug
+
+	var body CreateArticleCommentJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateArticleComment(ctx.Request().Context(), request.(CreateArticleCommentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateArticleComment")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateArticleCommentResponseObject); ok {
+		return validResponse.VisitCreateArticleCommentResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// DeleteArticleComment operation middleware
+func (sh *strictHandler) DeleteArticleComment(ctx echo.Context, slug string, id int) error {
+	var request DeleteArticleCommentRequestObject
+
+	request.Slug = slug
+	request.Id = id
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteArticleComment(ctx.Request().Context(), request.(DeleteArticleCommentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteArticleComment")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(DeleteArticleCommentResponseObject); ok {
+		return validResponse.VisitDeleteArticleCommentResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// DeleteArticleFavorite operation middleware
+func (sh *strictHandler) DeleteArticleFavorite(ctx echo.Context, slug string) error {
+	var request DeleteArticleFavoriteRequestObject
+
+	request.Slug = slug
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteArticleFavorite(ctx.Request().Context(), request.(DeleteArticleFavoriteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteArticleFavorite")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(DeleteArticleFavoriteResponseObject); ok {
+		return validResponse.VisitDeleteArticleFavoriteResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateArticleFavorite operation middleware
+func (sh *strictHandler) CreateArticleFavorite(ctx echo.Context, slug string) error {
+	var request CreateArticleFavoriteRequestObject
+
+	request.Slug = slug
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateArticleFavorite(ctx.Request().Context(), request.(CreateArticleFavoriteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateArticleFavorite")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateArticleFavoriteResponseObject); ok {
+		return validResponse.VisitCreateArticleFavoriteResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetProfileByUsername operation middleware
+func (sh *strictHandler) GetProfileByUsername(ctx echo.Context, username string) error {
+	var request GetProfileByUsernameRequestObject
+
+	request.Username = username
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetProfileByUsername(ctx.Request().Context(), request.(GetProfileByUsernameRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetProfileByUsername")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetProfileByUsernameResponseObject); ok {
+		return validResponse.VisitGetProfileByUsernameResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// UnfollowUserByUsername operation middleware
+func (sh *strictHandler) UnfollowUserByUsername(ctx echo.Context, username string) error {
+	var request UnfollowUserByUsernameRequestObject
+
+	request.Username = username
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.UnfollowUserByUsername(ctx.Request().Context(), request.(UnfollowUserByUsernameRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnfollowUserByUsername")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(UnfollowUserByUsernameResponseObject); ok {
+		return validResponse.VisitUnfollowUserByUsernameResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// FollowUserByUsername operation middleware
+func (sh *strictHandler) FollowUserByUsername(ctx echo.Context, username string) error {
+	var request FollowUserByUsernameRequestObject
+
+	request.Username = username
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.FollowUserByUsername(ctx.Request().Context(), request.(FollowUserByUsernameRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "FollowUserByUsername")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(FollowUserByUsernameResponseObject); ok {
+		return validResponse.VisitFollowUserByUsernameResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetTags operation middleware
+func (sh *strictHandler) GetTags(ctx echo.Context) error {
+	var request GetTagsRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTags(ctx.Request().Context(), request.(GetTagsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTags")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetTagsResponseObject); ok {
+		return validResponse.VisitGetTagsResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetCurrentUser operation middleware
+func (sh *strictHandler) GetCurrentUser(ctx echo.Context) error {
+	var request GetCurrentUserRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCurrentUser(ctx.Request().Context(), request.(GetCurrentUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCurrentUser")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetCurrentUserResponseObject); ok {
+		return validResponse.VisitGetCurrentUserResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// UpdateCurrentUser operation middleware
+func (sh *strictHandler) UpdateCurrentUser(ctx echo.Context) error {
+	var request UpdateCurrentUserRequestObject
+
+	var body UpdateCurrentUserJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateCurrentUser(ctx.Request().Context(), request.(UpdateCurrentUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateCurrentUser")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(UpdateCurrentUserResponseObject); ok {
+		return validResponse.VisitUpdateCurrentUserResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateUser operation middleware
+func (sh *strictHandler) CreateUser(ctx echo.Context) error {
+	var request CreateUserRequestObject
+
+	var body CreateUserJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateUser(ctx.Request().Context(), request.(CreateUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateUser")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateUserResponseObject); ok {
+		return validResponse.VisitCreateUserResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// Login operation middleware
+func (sh *strictHandler) Login(ctx echo.Context) error {
+	var request LoginRequestObject
+
+	var body LoginJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.Login(ctx.Request().Context(), request.(LoginRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "Login")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(LoginResponseObject); ok {
+		return validResponse.VisitLoginResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

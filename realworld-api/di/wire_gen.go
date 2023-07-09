@@ -76,6 +76,7 @@ var (
 		repositorySet,
 	)
 	outputPortSet = wire.NewSet(rest.NewErrorOutputPort, rest.NewGetArticleOutputPort)
+	// TODO: set real repository
 	repositorySet = wire.NewSet(wire.InterfaceValue(new(repository.Article), repository.Article(nil)))
 )
 

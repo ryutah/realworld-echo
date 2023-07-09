@@ -8,9 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	xerrorreport "github.com/ryutah/realworld-echo/realworld-api/pkg/xerrorreport"
 	usecase "github.com/ryutah/realworld-echo/realworld-api/usecase"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockErrorOutputPort is a mock of ErrorOutputPort interface.

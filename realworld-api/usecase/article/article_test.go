@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/golang/mock/gomock"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtesting"
 	. "github.com/ryutah/realworld-echo/realworld-api/usecase/article"
-	"github.com/ryutah/realworld-echo/realworld-api/usecase/article/mock"
+	"github.com/ryutah/realworld-echo/realworld-api/usecase/article/mock/gen"
+	"go.uber.org/mock/gomock"
 )
 
 func TestArticle_Get(t *testing.T) {
@@ -136,9 +136,9 @@ func TestArticle_Get(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			getOutputPort := mock.NewMockGetArticleOutputPort(ctrl)
-			errorHandler := mock.NewMockErrorHandler(ctrl)
-			article := mock.NewMockArticle(ctrl)
+			getOutputPort := gen.NewMockGetArticleOutputPort(ctrl)
+			errorHandler := gen.NewMockErrorHandler(ctrl)
+			article := gen.NewMockArticle(ctrl)
 
 			if tt.configs.isError {
 				errorHandler.EXPECT().
