@@ -6,27 +6,20 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/errors"
-	"github.com/golang/mock/gomock"
-	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
-	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtesting"
+	mock_usecase "github.com/ryutah/realworld-echo/realworld-api/internal/mock/usecase"
 	. "github.com/ryutah/realworld-echo/realworld-api/usecase"
-	"github.com/ryutah/realworld-echo/realworld-api/usecase/mock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func Test_RrrorHandler_Handle(t *testing.T) {
+func Test_ErrorHandler_Handle(t *testing.T) {
 	dummyError := errors.WithDetail(errors.New("dummy error"), "dummy_error_detail")
-	dummyError2 := errors.WithDetail(errors.New("dummy error2"), "dummy_error_detail2")
 
 	type mocks_errorReporter struct {
 		report_args_error error
 	}
-	type mocks_errorOutputPort struct {
-		internalError_args_errorResult ErrorResult
-		internalError_returns_error    error
-	}
 	type mocks struct {
 		errorReporter mocks_errorReporter
-		outputPort    mocks_errorOutputPort
 	}
 	type configs struct {
 		isInternalError bool
@@ -36,22 +29,25 @@ func Test_RrrorHandler_Handle(t *testing.T) {
 		err  error
 		opts []ErrorHandlerOption
 	}
+	type wants struct {
+		result *Result[any]
+	}
 	tests := []struct {
 		name    string
 		args    args
 		mocks   mocks
 		configs configs
-		wants   error
+		wants   wants
 	}{
 		{
-			name: "when_given_error_match_custome_error_handler_error_should_call_custom_error_handler_and_return_nil",
+			name: "when_given_error_match_custome_error_handler_error_should_call_custom_error_handler_and_return_expected_result",
 			args: args{
 				ctx: context.TODO(),
 				err: dummyError,
 				opts: []ErrorHandlerOption{
-					func(ehc *ExportErrorHandlerConfig) {
-						ehc.AddRendrer(dummyError, func(ctx context.Context, outputPort ErrorOutputPort, err error) error {
-							return nil
+					func(ehc *ExportErrorHandlerWithoutOutputPortConfig) {
+						ehc.AddErrorHandlerOption(func(ctx context.Context, err error) (*FailResult, bool) {
+							return NewFailResult(FailTypeBadRequest, "test_faile_result"), true
 						})
 					},
 				},
@@ -59,163 +55,213 @@ func Test_RrrorHandler_Handle(t *testing.T) {
 			configs: configs{
 				isInternalError: false,
 			},
-			wants: nil,
+			wants: wants{
+				result: Fail[any](NewFailResult(FailTypeBadRequest, "test_faile_result")),
+			},
 		},
 		{
-			name: "when_given_error_not_match_custome_error_handler_error_should_call_ErroReporter#Report_and_ErrorOutputPort#InternalError_and_return_nil",
+			name: "when_given_error_not_match_custome_error_handler_error_should_call_ErroReporter#Report_and_ErrorOutputPort#InternalError_and_return_expected_result",
 			args: args{
 				ctx: context.TODO(),
-				err: dummyError2,
+				err: dummyError,
 				opts: []ErrorHandlerOption{
-					func(ehc *ExportErrorHandlerConfig) {
-						ehc.AddRendrer(dummyError, func(ctx context.Context, outputPort ErrorOutputPort, err error) error {
-							return nil
+					func(ehc *ExportErrorHandlerWithoutOutputPortConfig) {
+						ehc.AddErrorHandlerOption(func(ctx context.Context, err error) (*FailResult, bool) {
+							return nil, false
 						})
 					},
 				},
 			},
 			mocks: mocks{
 				errorReporter: mocks_errorReporter{
-					report_args_error: dummyError2,
-				},
-				outputPort: mocks_errorOutputPort{
-					internalError_args_errorResult: ErrorResult{
-						Message:      fmt.Sprintf("%v", dummyError2),
-						Descriptions: errors.GetAllDetails(dummyError2),
-					},
-					internalError_returns_error: nil,
+					report_args_error: dummyError,
 				},
 			},
 			configs: configs{
 				isInternalError: true,
 			},
-			wants: nil,
+			wants: wants{
+				result: Fail[any](
+					NewFailResult(FailTypeInternalError, fmt.Sprintf("%v", dummyError), "dummy_error_detail"),
+				),
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-
-			errorReporter := mock.NewMockErrorReporter(ctrl)
-			outputPort := mock.NewMockErrorOutputPort(ctrl)
+			errorReporter := mock_usecase.NewMockErrorReporter()
 
 			if tt.configs.isInternalError {
-				errorReporter.EXPECT().Report(gomock.Not(nil), tt.mocks.errorReporter.report_args_error, gomock.Any())
-				outputPort.EXPECT().InternalError(gomock.Not(nil), tt.mocks.outputPort.internalError_args_errorResult).Return(tt.mocks.outputPort.internalError_returns_error)
+				errorReporter.On(
+					mock_usecase.ErrorReporterFuncNames.Report,
+					mock.Anything,
+					tt.mocks.errorReporter.report_args_error,
+					mock.Anything,
+				)
 			}
 
-			e := NewErrorHandler(errorReporter, outputPort)
-			err := e.Handle(tt.args.ctx, tt.args.err, tt.args.opts...)
-			xtesting.CompareError(t, "handle", tt.wants, err)
+			e := NewErrorHandler[any](errorReporter)
+			got := e.Handle(tt.args.ctx, tt.args.err, tt.args.opts...)
+			assert.Equal(t, tt.wants.result, got)
+			errorReporter.AssertExpectations(t)
 		})
 	}
 }
 
-func Test_NotFound(t *testing.T) {
-	dummyError := errors.WithDetail(errors.New("dummy"), "dummy_error_detail")
+func Test_WithNotFoundHandler(t *testing.T) {
+	dummyError := errors.WithDetail(errors.New("dummy"), "dummy_error_detail_1")
+	dummyError2 := errors.WithDetail(errors.New("dummy2"), "dummy_error2_detail_1")
 
-	type mocks_errorOutputPort struct {
-		notFound_args_errorResult ErrorResult
-		notFound_returns_error    error
-	}
-	type mocks struct {
-		errorOutputPort mocks_errorOutputPort
-	}
 	type args struct {
+		errs []error
+	}
+	type calls struct {
 		ctx context.Context
 		err error
 	}
+	type wants struct {
+		result *FailResult
+		ok     bool
+	}
+
 	tests := []struct {
 		name  string
 		args  args
-		mocks mocks
-		wants error
+		calls calls
+		wants wants
 	}{
 		{
-			name: "when_given_any_error_should_call_ErrorOutputPort#NotFound_with_expected_args_and_return_nil",
+			name: "when_given_any_errors_should_return_expected_result_and_true",
 			args: args{
+				errs: []error{dummyError, dummyError2},
+			},
+			calls: calls{
 				ctx: context.TODO(),
-				err: errors.WithDetail(derrors.Errors.NotFound.Err, derrors.Errors.NotFound.Message),
+				err: dummyError,
 			},
-			mocks: mocks{
-				errorOutputPort: mocks_errorOutputPort{
-					notFound_args_errorResult: ErrorResult{
-						Message: derrors.Errors.NotFound.Err.Error(),
-						Descriptions: []string{
-							derrors.Errors.NotFound.Message,
-						},
-					},
-					notFound_returns_error: nil,
-				},
+			wants: wants{
+				result: NewFailResult(FailTypeNotFound, fmt.Sprintf("%v", dummyError), "dummy_error_detail_1"),
+				ok:     true,
 			},
-			wants: nil,
 		},
 		{
-			name: "when_given_no_details_error_should_call_ErrorOutputPort#NotFound_with_expected_args_and_return_nil",
+			name: "when_given_nil_as_error_should_return_nil_and_false",
 			args: args{
+				errs: []error{nil},
+			},
+			calls: calls{
 				ctx: context.TODO(),
-				err: derrors.Errors.NotFound.Err,
+				err: dummyError,
 			},
-			mocks: mocks{
-				errorOutputPort: mocks_errorOutputPort{
-					notFound_args_errorResult: ErrorResult{
-						Message: derrors.Errors.NotFound.Err.Error(),
-					},
-					notFound_returns_error: nil,
-				},
+			wants: wants{
+				result: nil,
+				ok:     false,
 			},
-			wants: nil,
 		},
 		{
-			name: "when_given_nil_as_error_should_call_ErrorOutputPort#NotFound_with_expected_args_and_return_nil",
+			name: "when_given_not_match_error_should_return_nil_and_false",
 			args: args{
+				errs: []error{dummyError},
+			},
+			calls: calls{
 				ctx: context.TODO(),
-				err: nil,
+				err: dummyError2,
 			},
-			mocks: mocks{
-				errorOutputPort: mocks_errorOutputPort{
-					notFound_args_errorResult: ErrorResult{
-						Message: fmt.Sprintf("%v", nil),
-					},
-					notFound_returns_error: nil,
-				},
+			wants: wants{
+				result: nil,
+				ok:     false,
 			},
-			wants: nil,
-		},
-		{
-			name: "when_given_any_error_should_call_ErrorOutputPort#NotFound_returned_error_with_expected_args_and_return_error",
-			args: args{
-				ctx: context.TODO(),
-				err: errors.WithDetail(derrors.Errors.NotFound.Err, derrors.Errors.NotFound.Message),
-			},
-			mocks: mocks{
-				errorOutputPort: mocks_errorOutputPort{
-					notFound_args_errorResult: ErrorResult{
-						Message: derrors.Errors.NotFound.Err.Error(),
-						Descriptions: []string{
-							derrors.Errors.NotFound.Message,
-						},
-					},
-					notFound_returns_error: dummyError,
-				},
-			},
-			wants: dummyError,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			opt := WithNotFoundHandler(tt.args.errs...)
+			var config ExportErrorHandlerWithoutOutputPortConfig
+			opt(&config)
 
-			outputPort := mock.NewMockErrorOutputPort(ctrl)
-			outputPort.EXPECT().
-				NotFound(tt.args.ctx, tt.mocks.errorOutputPort.notFound_args_errorResult).
-				Return(tt.mocks.errorOutputPort.notFound_returns_error)
+			got, ok := config.ErrorHandlerOptions()[0](tt.calls.ctx, tt.calls.err)
+			assert.Equal(t, tt.wants.result, got, "result")
+			assert.Equal(t, tt.wants.ok, ok, "ok")
+		})
+	}
+}
 
-			err := NotFound(tt.args.ctx, outputPort, tt.args.err)
+func Test_WithBadRequestHandler(t *testing.T) {
+	dummyError := errors.WithDetail(errors.New("dummy"), "dummy_error_detail_1")
+	dummyError2 := errors.WithDetail(errors.New("dummy2"), "dummy_error2_detail_1")
 
-			xtesting.CompareError(t, "NotFound", tt.wants, err)
+	type args struct {
+		errs []error
+	}
+	type calls struct {
+		ctx context.Context
+		err error
+	}
+	type wants struct {
+		result *FailResult
+		ok     bool
+	}
+
+	tests := []struct {
+		name  string
+		args  args
+		calls calls
+		wants wants
+	}{
+		{
+			name: "when_given_any_errors_should_return_expected_result_and_true",
+			args: args{
+				errs: []error{dummyError, dummyError2},
+			},
+			calls: calls{
+				ctx: context.TODO(),
+				err: dummyError,
+			},
+			wants: wants{
+				result: NewFailResult(FailTypeBadRequest, fmt.Sprintf("%v", dummyError), "dummy_error_detail_1"),
+				ok:     true,
+			},
+		},
+		{
+			name: "when_given_nil_as_error_should_return_nil_and_false",
+			args: args{
+				errs: []error{nil},
+			},
+			calls: calls{
+				ctx: context.TODO(),
+				err: dummyError,
+			},
+			wants: wants{
+				result: nil,
+				ok:     false,
+			},
+		},
+		{
+			name: "when_given_not_match_error_should_return_nil_and_false",
+			args: args{
+				errs: []error{dummyError},
+			},
+			calls: calls{
+				ctx: context.TODO(),
+				err: dummyError2,
+			},
+			wants: wants{
+				result: nil,
+				ok:     false,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opt := WithBadRequestHandler(tt.args.errs...)
+			var config ExportErrorHandlerWithoutOutputPortConfig
+			opt(&config)
+
+			got, ok := config.ErrorHandlerOptions()[0](tt.calls.ctx, tt.calls.err)
+			assert.Equal(t, tt.wants.result, got, "result")
+			assert.Equal(t, tt.wants.ok, ok, "ok")
 		})
 	}
 }

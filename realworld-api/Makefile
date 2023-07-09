@@ -11,12 +11,14 @@ help: ## Prints help for targets with comments
 init: ## initialize projects
 	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.12.4
 	go install github.com/google/wire/cmd/wire@v0.5.0
-	go install github.com/golang/mock/mockgen@v1.6.0
-
+	go install go.uber.org/mock/mockgen@v0.2.0
+	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.16.2
+	pip install sqlfluff==2.1.2
 
 .PHONY: generate/oapi
 generate/oapi: ## generate oapi code
-	oapi-codegen -package gen ../docs/api/openapi.yml > api/rest/gen/realworld.gen.go
+	oapi-codegen -config ./server.cfg.yaml ../docs/api/openapi.yml
+	oapi-codegen -config ./types.cfg.yaml ../docs/api/openapi.yml
 
 .PHONY: generate/wire
 generate/wire: ## generate wire di code
@@ -42,3 +44,33 @@ deploy/cloudrun: ## deploy cloudrun container image
 	  --region asia-northeast1 \
 	  --no-allow-unauthenticated \
 	  realworld-api
+
+.PHONY: db/up
+db/up: ## start database server
+	docker container run -it --rm -p 5432:5432 \
+	  -e POSTGRES_PASSWORD=psql \
+	  -e POSTGRES_USER=psql \
+	  -e POSTGRES_DB=realworld \
+	  postgres:15.3-bullseye
+
+.PHONY: migrates/create
+migrates/create: ## create new migrate file
+	migrate create -dir ./resources/migrations -ext sql -seq -tz Asia/Tokyo ${MIGRATE_NAME}
+
+.PHONY: migrates/up
+migrates/up: ## run migrate up
+	migrate -source \
+	  "file://${PWD}/resources/migrations" \
+	  -database 'postgres://psql:psql@localhost:5432/realworld?sslmode=disable' \
+	  up
+
+.PHONY: migrates/down
+migrates/down: ## run migrate down
+	migrate -source \
+	  "file://${PWD}/resources/migrations" \
+	  -database 'postgres://psql:psql@localhost:5432/realworld?sslmode=disable' \
+	  down
+
+.PHONY: format
+format: ## format codes
+	sqlfluff format  --dialect postgres ./resources/migrations/*.sql

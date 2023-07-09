@@ -4,11 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
-	"github.com/google/go-cmp/cmp"
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
 	. "github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
-	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtesting"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUID(t *testing.T) {
@@ -43,10 +41,8 @@ func TestUID(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got, err := NewUID(test.uid)
-			if diff := cmp.Diff(test.expected.uid, got.String()); diff != "" {
-				xtesting.PrintDiff(t, "NewUID", diff)
-			}
-			xtesting.CompareError(t, "NewUID", test.expected.err, err)
+			assert.Equal(t, test.expected.uid, got.String())
+			assert.ErrorIs(t, err, test.expected.err)
 		})
 	}
 }
@@ -83,10 +79,8 @@ func TestSlug(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got, err := NewSlug(test.slug)
-			if diff := cmp.Diff(test.expected.slug, got.String()); diff != "" {
-				xtesting.PrintDiff(t, "NewSlug", diff)
-			}
-			xtesting.CompareError(t, "NewSlug", test.expected.err, err)
+			assert.Equal(t, test.expected.slug, got.String())
+			assert.ErrorIs(t, err, test.expected.err)
 		})
 	}
 }
@@ -115,10 +109,8 @@ func TestTitle(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got, err := NewTitle(test.title)
-			if diff := cmp.Diff(test.expected.title, got.String()); diff != "" {
-				xtesting.PrintDiff(t, "NewTitle", diff)
-			}
-			xtesting.CompareError(t, "NewTitle", test.expected.err, err)
+			assert.Equal(t, test.expected.title, got.String())
+			assert.ErrorIs(t, err, test.expected.err)
 		})
 	}
 }
@@ -147,10 +139,8 @@ func TestName(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got, err := NewName(test.n)
-			if diff := cmp.Diff(test.expected.name, got.String()); diff != "" {
-				xtesting.PrintDiff(t, "NewName", diff)
-			}
-			xtesting.CompareError(t, "NewName", test.expected.err, err)
+			assert.Equal(t, test.expected.name, got.String())
+			assert.ErrorIs(t, err, test.expected.err)
 		})
 	}
 }
@@ -203,13 +193,8 @@ func TestEmail(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got, err := NewEmail(test.email)
-			if diff := cmp.Diff(test.expected.email, got.String()); diff != "" {
-				xtesting.PrintDiff(t, "NewEmail", diff)
-			}
-
-			if !xtesting.CompareError(t, "NewEmail", test.expected.err, err) {
-				t.Log(errors.FlattenDetails(err))
-			}
+			assert.Equal(t, test.expected.email, got.String())
+			assert.ErrorIs(t, err, test.expected.err)
 		})
 	}
 }

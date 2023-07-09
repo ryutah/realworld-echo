@@ -1,15 +1,15 @@
 package main
 
 import (
+	"log"
+
+	"github.com/ryutah/realworld-echo/realworld-api/api/rest"
 	_ "github.com/ryutah/realworld-echo/realworld-api/config"
 	"github.com/ryutah/realworld-echo/realworld-api/di"
-	"github.com/ryutah/realworld-echo/realworld-api/pkg/xerrorreport"
 )
 
 func main() {
-	e := di.InitializeLocalRestExecuter(
-		xerrorreport.Service("my_service"),
-		xerrorreport.Version("v1"),
-	)
-	e.Start()
+	di.InjectLocal(func(e *rest.Extcuter) {
+		log.Println("start app")
+	}).Run()
 }

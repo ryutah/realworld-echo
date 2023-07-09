@@ -1,0 +1,8 @@
+CREATE DOMAIN long_text AS TEXT
+CHECK (LENGTH(value) <= 5000);
+
+CREATE DOMAIN short_text AS TEXT
+CHECK (LENGTH(value) <= 50);
+
+CREATE DOMAIN user_id AS TEXT
+CHECK (LENGTH(value) <= 256);

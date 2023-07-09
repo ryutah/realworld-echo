@@ -4,9 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	. "github.com/ryutah/realworld-echo/realworld-api/pkg/auth"
-	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtesting"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAuthToken(t *testing.T) {
@@ -19,9 +18,7 @@ func TestAuthToken(t *testing.T) {
 	if !ok {
 		t.Error("should be return true")
 	}
-	if diff := cmp.Diff(token, got); diff != "" {
-		xtesting.PrintDiff(t, "AuthTokenFromContext", diff)
-	}
+	assert.Equal(t, token, got)
 }
 
 func TestAuthTokenWihtoutSetToken(t *testing.T) {
@@ -32,7 +29,5 @@ func TestAuthTokenWihtoutSetToken(t *testing.T) {
 	if ok {
 		t.Error("should be return false")
 	}
-	if diff := cmp.Diff(NewAuthToken(""), got); diff != "" {
-		xtesting.PrintDiff(t, "AuthTokenFromContext", diff)
-	}
+	assert.Equal(t, NewAuthToken("") , got)
 }

@@ -2,11 +2,14 @@ package usecase
 
 // export for error_handler.go
 
-type ExportErrorHandlerConfig = errorHandlerConfig
+type ExportErrorHandlerWithoutOutputPortConfig = errorHandlerConfig
 
-func (e *ExportErrorHandlerConfig) AddRendrer(target error, f renderFunc) {
-	e.rendrers = append(e.rendrers, errorRenderer{
-		target:   target,
-		renderer: f,
-	})
+type ErrorHandlerWithoutOutputPortErrorHandleOption = errorErrorHandleOption
+
+func (e *ExportErrorHandlerWithoutOutputPortConfig) ErrorHandlerOptions() []errorErrorHandleOption {
+	return e.errorHandlerOptions
+}
+
+func (e *ExportErrorHandlerWithoutOutputPortConfig) AddErrorHandlerOption(opt errorErrorHandleOption) {
+	e.addErrorHandlerOption(opt)
 }

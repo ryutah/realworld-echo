@@ -13,51 +13,47 @@ type ErrorReporter interface {
 	Report(ctx context.Context, err error, errContext xerrorreport.ErrorContext)
 }
 
-type ErrorResult struct {
-	Message      string
-	Descriptions []string
-}
-
-type ErrorOutputPort interface {
-	InternalError(context.Context, ErrorResult) error
-	NotFound(context.Context, ErrorResult) error
-	BadRequest(context.Context, ErrorResult) error
-}
-
 type ErrorHandlerOption func(*errorHandlerConfig)
 
-type ErrorHandler interface {
-	Handle(context.Context, error, ...ErrorHandlerOption) error
+type errorErrorHandleOption func(context.Context, error) (*FailResult, bool)
+
+type errorHandlerConfig struct {
+	errorHandlerOptions []errorErrorHandleOption
 }
 
-type errorHandler struct {
+func (e *errorHandlerConfig) addErrorHandlerOption(opt errorErrorHandleOption) {
+	e.errorHandlerOptions = append(e.errorHandlerOptions, opt)
+}
+
+type ErrorHandler[R any] interface {
+	Handle(context.Context, error, ...ErrorHandlerOption) *Result[R]
+}
+
+type errorHandler[R any] struct {
 	errorReporter ErrorReporter
-	outputPort    ErrorOutputPort
 }
 
-func NewErrorHandler(errorReporter ErrorReporter, outputPort ErrorOutputPort) ErrorHandler {
-	return &errorHandler{
-		errorReporter: errorReporter,
-		outputPort:    outputPort,
+func NewErrorHandler[R any](reporter ErrorReporter) ErrorHandler[R] {
+	return &errorHandler[R]{
+		errorReporter: reporter,
 	}
 }
 
-func (e *errorHandler) Handle(ctx context.Context, err error, opts ...ErrorHandlerOption) error {
+func (e *errorHandler[R]) Handle(ctx context.Context, err error, opts ...ErrorHandlerOption) *Result[R] {
 	xlog.Warn(ctx, fmt.Sprintf("render error: %+v", err))
 
-	var opt errorHandlerConfig
-	for _, o := range opts {
-		o(&opt)
+	var config errorHandlerConfig
+	for _, opt := range opts {
+		opt(&config)
 	}
 
-	for _, catch := range opt.rendrers {
-		if errors.Is(err, catch.target) {
-			return catch.renderer(ctx, e.outputPort, err)
+	for _, opt := range config.errorHandlerOptions {
+		if result, ok := opt(ctx, err); ok {
+			return Fail[R](result)
 		}
 	}
 
 	xlog.Debug(ctx, "render internal error")
-
 	file, line, fn, _ := errors.GetOneLineSource(err)
 	e.errorReporter.Report(ctx, err, xerrorreport.ErrorContext{
 		User: "", // TODO: should be get user id from context
@@ -67,44 +63,46 @@ func (e *errorHandler) Handle(ctx context.Context, err error, opts ...ErrorHandl
 			Function: fn,
 		},
 	})
-	return e.outputPort.InternalError(ctx, ErrorResult{
-		Message:      err.Error(),
-		Descriptions: errors.GetAllDetails(err),
-	})
+	return Fail[R](newFaileResult(FailTypeInternalError, err))
 }
 
-type renderFunc func(context.Context, ErrorOutputPort, error) error
-
-type errorHandlerConfig struct {
-	rendrers []errorRenderer
-}
-
-type errorRenderer struct {
-	target   error
-	renderer renderFunc
-}
-
-func WithErrorRendrer(target error, f renderFunc) ErrorHandlerOption {
-	return func(opt *errorHandlerConfig) {
-		opt.rendrers = append(opt.rendrers, errorRenderer{
-			target:   target,
-			renderer: f,
+func WithBadRequestHandler(targets ...error) ErrorHandlerOption {
+	return func(c *errorHandlerConfig) {
+		c.addErrorHandlerOption(func(ctx context.Context, err error) (*FailResult, bool) {
+			if includeInErrors(err, targets...) {
+				xlog.Debug(ctx, "render bad request")
+				return newFaileResult(FailTypeBadRequest, err), true
+			}
+			return nil, false
 		})
 	}
 }
 
-func BadRequest(ctx context.Context, port ErrorOutputPort, err error) error {
-	xlog.Debug(ctx, "render bad request")
-	return port.BadRequest(ctx, ErrorResult{
-		Message:      fmt.Sprintf("%v", err),
-		Descriptions: errors.GetAllDetails(err),
-	})
+func WithNotFoundHandler(targets ...error) ErrorHandlerOption {
+	return func(c *errorHandlerConfig) {
+		c.addErrorHandlerOption(func(ctx context.Context, err error) (*FailResult, bool) {
+			if includeInErrors(err, targets...) {
+				xlog.Debug(ctx, "render not found")
+				return newFaileResult(FailTypeNotFound, err), true
+			}
+			return nil, false
+		})
+	}
 }
 
-func NotFound(ctx context.Context, port ErrorOutputPort, err error) error {
-	xlog.Debug(ctx, "render not found")
-	return port.NotFound(ctx, ErrorResult{
-		Message:      fmt.Sprintf("%v", err),
-		Descriptions: errors.GetAllDetails(err),
-	})
+func newFaileResult(typ FailType, err error) *FailResult {
+	return NewFailResult(
+		typ,
+		fmt.Sprintf("%v", err),
+		errors.GetAllDetails(err)...,
+	)
+}
+
+func includeInErrors(err error, targets ...error) bool {
+	for _, target := range targets {
+		if errors.Is(err, target) {
+			return true
+		}
+	}
+	return false
 }

@@ -2,10 +2,8 @@ package main
 
 import (
 	"cloud.google.com/go/profiler"
-	"github.com/ryutah/realworld-echo/realworld-api/config"
+	"github.com/ryutah/realworld-echo/realworld-api/api/rest"
 	"github.com/ryutah/realworld-echo/realworld-api/di"
-	"github.com/ryutah/realworld-echo/realworld-api/pkg/xerrorreport"
-	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtrace"
 )
 
 func main() {
@@ -16,10 +14,6 @@ func main() {
 		panic(err)
 	}
 
-	e := di.InitializeCloudRunRestExecuter(
-		xtrace.ProjectID(config.GetConfig().ProjectID),
-		xerrorreport.Service("my_service"),
-		xerrorreport.Version("v1"),
-	)
-	e.Start()
+	di.InjectCloudRun(func(e *rest.Extcuter) {
+	}).Run()
 }
