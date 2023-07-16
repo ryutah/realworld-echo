@@ -9,6 +9,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
+	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
 	mock_repository "github.com/ryutah/realworld-echo/realworld-api/internal/mock/repository"
 	mock_usecase "github.com/ryutah/realworld-echo/realworld-api/internal/mock/usecase"
 	"github.com/ryutah/realworld-echo/realworld-api/usecase"
@@ -33,8 +34,8 @@ func Test_GetArticle_Get(t *testing.T) {
 		articleRepository mocks_articleRepository
 	}
 	type configs struct {
-		isError                 bool
-		article_get_should_skip bool
+		errorHandler_handle_should_call bool
+		article_get_should_skip         bool
 	}
 	type args struct {
 		ctx     context.Context
@@ -42,7 +43,7 @@ func Test_GetArticle_Get(t *testing.T) {
 	}
 
 	var (
-		now        = time.Now()
+		now        = premitive.NewJSTTime(time.Now())
 		dummyError = errors.New("dummy")
 		article1   = model.Article{
 			Slug: "id",
@@ -101,7 +102,7 @@ func Test_GetArticle_Get(t *testing.T) {
 			},
 			wants: usecase.Fail[GetArticleResult](usecase.NewFailResult(usecase.FailTypeNotFound, "error")),
 			configs: configs{
-				isError: true,
+				errorHandler_handle_should_call: true,
 			},
 		},
 		{
@@ -119,17 +120,17 @@ func Test_GetArticle_Get(t *testing.T) {
 			},
 			wants: usecase.Fail[GetArticleResult](usecase.NewFailResult(usecase.FailTypeBadRequest, "error")),
 			configs: configs{
-				isError:                 true,
-				article_get_should_skip: true,
+				errorHandler_handle_should_call: true,
+				article_get_should_skip:         true,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			errorHandler := &mock_usecase.MockErrorHandler[GetArticleResult]{}
+			errorHandler := mock_usecase.NewMockErrorHandler[GetArticleResult]()
 			article := mock_repository.NewMockArticle()
 
-			if tt.configs.isError {
+			if tt.configs.errorHandler_handle_should_call {
 				errorHandler.On(
 					mock_usecase.ErrorHandlerFuncNames.Handle,
 					mock.Anything, mock.Anything, mock.IsType([]usecase.ErrorHandlerOption{}),

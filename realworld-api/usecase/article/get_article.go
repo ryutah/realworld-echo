@@ -56,6 +56,7 @@ func (a *GetArticle) Get(ctx context.Context, slugStr string) *usecase.Result[Ge
 	if err != nil {
 		return a.errorHandler.Handle(ctx, err, usecase.WithNotFoundHandler(derrors.Errors.NotFound.Err))
 	}
+	// TODO(ryutah): お気に入りリストを取得する
 
 	return usecase.Success(GetArticleResult{
 		Article: *article,

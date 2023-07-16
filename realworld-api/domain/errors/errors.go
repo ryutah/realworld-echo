@@ -2,6 +2,9 @@ package errors
 
 import (
 	"errors"
+
+	cerrors "github.com/cockroachdb/errors"
+	"github.com/go-playground/validator/v10"
 )
 
 type errorAndMessage struct {
@@ -21,4 +24,17 @@ var Errors = struct {
 		Err:     errors.New("not_found"),
 		Message: "specified entity is not found",
 	},
+}
+
+func NewValidationError(depth int, err error) error {
+	newErr := cerrors.WrapWithDepth(1, Errors.Validation.Err, Errors.Validation.Message)
+
+	verrs, ok := err.(validator.ValidationErrors)
+	if !ok {
+		return cerrors.WithDetail(newErr, err.Error())
+	}
+	for _, ve := range verrs {
+		newErr = cerrors.WithDetail(newErr, ve.Error())
+	}
+	return newErr
 }

@@ -53,8 +53,8 @@ func (a *Article) GetArticle(ctx context.Context, request gen.GetArticleRequestO
 					Favorited:      false,
 					FavoritesCount: 0,
 					TagList:        []string{},
-					CreatedAt:      article.Article.CreatedAt,
-					UpdatedAt:      article.Article.UpdatedAt,
+					CreatedAt:      article.Article.CreatedAt.Time(),
+					UpdatedAt:      article.Article.UpdatedAt.Time(),
 				},
 			},
 		}, nil

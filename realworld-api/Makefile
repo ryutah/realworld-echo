@@ -74,3 +74,11 @@ migrates/down: ## run migrate down
 .PHONY: format
 format: ## format codes
 	sqlfluff format  --dialect postgres ./resources/migrations/*.sql
+
+.PHONY: test
+test: ## run unit test
+	go test -shuffle on -cover -coverprofile cover.out ./...
+
+.PHONY: test/view_coverage
+test/view_coverage: ## view coverage report
+	go tool cover -html=cover.out -o cover.html

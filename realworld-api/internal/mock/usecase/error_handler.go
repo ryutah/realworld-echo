@@ -19,6 +19,10 @@ type MockErrorHandler[R any] struct {
 
 var _ usecase.ErrorHandler[any] = (*MockErrorHandler[any])(nil)
 
+func NewMockErrorHandler[R any]() *MockErrorHandler[R] {
+	return &MockErrorHandler[R]{}
+}
+
 func (m *MockErrorHandler[R]) Handle(ctx context.Context, err error, opts ...usecase.ErrorHandlerOption) *usecase.Result[R] {
 	args := m.Called(ctx, err, opts)
 	return args.Get(0).(*usecase.Result[R])

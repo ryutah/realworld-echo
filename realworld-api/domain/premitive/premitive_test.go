@@ -104,6 +104,21 @@ func TestTitle(t *testing.T) {
 				err:   nil,
 			},
 		},
+		{
+			name:  "max_length_title",
+			title: strings.Repeat("a", 255),
+			expected: expected{
+				title: strings.Repeat("a", 255),
+				err:   nil,
+			},
+		},
+		{
+			name:  "invalid_length_title",
+			title: strings.Repeat("a", 256),
+			expected: expected{
+				err: derrors.Errors.Validation.Err,
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -195,6 +210,138 @@ func TestEmail(t *testing.T) {
 			got, err := NewEmail(test.email)
 			assert.Equal(t, test.expected.email, got.String())
 			assert.ErrorIs(t, err, test.expected.err)
+		})
+	}
+}
+
+func TestLongText(t *testing.T) {
+	type expected struct {
+		text string
+		err  error
+	}
+
+	tests := []struct {
+		name     string
+		text     string
+		expected expected
+	}{
+		{
+			name: "valid_longtext",
+			text: "long_text",
+			expected: expected{
+				text: "long_text",
+				err:  nil,
+			},
+		},
+		{
+			name: "valid_max_length_longtext",
+			text: strings.Repeat("a", 5000),
+			expected: expected{
+				text: strings.Repeat("a", 5000),
+				err:  nil,
+			},
+		},
+		{
+			name: "invalid_length_longtext",
+			text: strings.Repeat("a", 5001),
+			expected: expected{
+				text: "",
+				err:  derrors.Errors.Validation.Err,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := NewLongText(test.text)
+			assert.Equal(t, test.expected.text, got.String())
+			assert.ErrorIs(t, err, test.expected.err)
+		})
+	}
+}
+
+func TestShortText(t *testing.T) {
+	type expected struct {
+		text string
+		err  error
+	}
+
+	tests := []struct {
+		name     string
+		text     string
+		expected expected
+	}{
+		{
+			name: "valid_shorttext",
+			text: "short_text",
+			expected: expected{
+				text: "short_text",
+				err:  nil,
+			},
+		},
+		{
+			name: "valid_max_length_shorttext",
+			text: strings.Repeat("a", 255),
+			expected: expected{
+				text: strings.Repeat("a", 255),
+				err:  nil,
+			},
+		},
+		{
+			name: "invalid_length_shorttext",
+			text: strings.Repeat("a", 256),
+			expected: expected{
+				text: "",
+				err:  derrors.Errors.Validation.Err,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := NewShortText(test.text)
+			assert.Equal(t, test.expected.text, got.String())
+			assert.ErrorIs(t, err, test.expected.err)
+		})
+	}
+}
+
+func TestURL(t *testing.T) {
+	type expected struct {
+		url string
+		err error
+	}
+
+	tests := []struct {
+		name     string
+		url      string
+		expected expected
+	}{
+		{
+			name: "valid_url",
+			url:  "https://test.com",
+			expected: expected{
+				url: "https://test.com",
+				err: nil,
+			},
+		},
+		{
+			name: "invalid_url",
+			url:  "bad url",
+			expected: expected{
+				url: "",
+				err: derrors.Errors.Validation.Err,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := NewURL(test.url)
+			assert.Equal(t, test.expected.url, got.String())
+			if !assert.ErrorIs(t, err, test.expected.err) {
+				t.Logf("error: %+v", err)
+			}
 		})
 	}
 }

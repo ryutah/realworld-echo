@@ -12,10 +12,12 @@ var ArticleFuncNames = struct {
 	GenerateID string
 	Get        string
 	Save       string
+	Search     string
 }{
 	GenerateID: "GenerateID",
 	Get:        "Get",
 	Save:       "Save",
+	Search:     "Search",
 }
 
 type MockArticle struct {
@@ -41,4 +43,9 @@ func (m *MockArticle) Get(ctx context.Context, slug model.Slug) (*model.Article,
 func (m *MockArticle) Save(ctx context.Context, article model.Article) error {
 	args := m.Called(ctx, article)
 	return args.Error(0)
+}
+
+func (m *MockArticle) Search(ctx context.Context, param repository.ArticleSearchParam) ([]model.Article, error) {
+	args := m.Called(ctx, param)
+	return args.Get(0).([]model.Article), args.Error(1)
 }

@@ -4,20 +4,23 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
+	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtime"
 )
 
 type (
-	UID      string
-	Slug     string
-	Title    string
-	Name     string
-	LongText string
-	Email    string
-	URL      string
+	UID       string
+	Slug      string
+	Title     string
+	Name      string
+	LongText  string
+	ShortText string
+	Email     string
+	URL       string
+	JSTTime   time.Time
 )
 
 func NewUID(s string) (UID, error) {
@@ -48,6 +51,7 @@ func NewTitle(s string) (Title, error) {
 	return withValidate(
 		s,
 		func() Title { return Title(s) },
+		max(255),
 	)
 }
 
@@ -70,11 +74,24 @@ func NewLongText(s string) (LongText, error) {
 	return withValidate(
 		s,
 		func() LongText { return LongText(s) },
+		max(5000),
 	)
 }
 
 func (l LongText) String() string {
 	return string(l)
+}
+
+func NewShortText(s string) (ShortText, error) {
+	return withValidate(
+		s,
+		func() ShortText { return ShortText(s) },
+		max(255),
+	)
+}
+
+func (s ShortText) String() string {
+	return string(s)
 }
 
 func NewEmail(s string) (Email, error) {
@@ -102,6 +119,14 @@ func (u URL) String() string {
 	return string(u)
 }
 
+func NewJSTTime(t time.Time) JSTTime {
+	return JSTTime(xtime.JST(t))
+}
+
+func (j JSTTime) Time() time.Time {
+	return time.Time(j)
+}
+
 func email() string {
 	return "email"
 }
@@ -116,25 +141,9 @@ func max(m int) string {
 
 func withValidate[Arg, Ret any](value Arg, genFunc func() Ret, rules ...string) (r Ret, _ error) {
 	if err := getValidate().Var(value, strings.Join(rules, ",")); err != nil {
-		return r, newValidationError(1, err)
+		return r, derrors.NewValidationError(1, err)
 	}
 	return genFunc(), nil
-}
-
-func newValidationError(depth int, ve error) error {
-	err := errors.WrapWithDepth(
-		depth+1, derrors.Errors.Validation.Err, derrors.Errors.Validation.Message,
-	)
-
-	verrs, ok := ve.(validator.ValidationErrors)
-	if !ok {
-		return errors.WithDetail(err, ve.Error())
-	}
-
-	for _, ve := range verrs {
-		err = errors.WithDetail(err, ve.Error())
-	}
-	return err
 }
 
 var (

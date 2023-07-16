@@ -2,11 +2,12 @@ package onmemory
 
 import (
 	"context"
-	"time"
 
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/repository"
 	authmodel "github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
+	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
+	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtime"
 )
 
 type Article struct {
@@ -30,8 +31,8 @@ func (a *Article) Get(_ context.Context, slug model.Slug) (*model.Article, error
 			Body:        "dummyBody",
 		},
 		Author:    authmodel.UserID("dummy"),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: premitive.NewJSTTime(xtime.Now()),
+		UpdatedAt: premitive.NewJSTTime(xtime.Now()),
 	}, nil
 }
 
