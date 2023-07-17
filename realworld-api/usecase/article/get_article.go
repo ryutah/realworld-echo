@@ -15,7 +15,8 @@ import (
 
 type (
 	GetArticleResult struct {
-		Article model.Article
+		Article   model.Article
+		Favorites model.FavoriteSlice
 	}
 	GetArticleInputPort interface {
 		Get(ctx context.Context, slugStr string) *usecase.Result[GetArticleResult]
@@ -25,17 +26,24 @@ type (
 type GetArticle struct {
 	errorHandler usecase.ErrorHandler[GetArticleResult]
 	repository   struct {
-		article repository.Article
+		article   repository.Article
+		favorites repository.Favorite
 	}
 }
 
-func NewGetArticle(errorHandler usecase.ErrorHandler[GetArticleResult], articleRepo repository.Article) GetArticleInputPort {
+func NewGetArticle(
+	errorHandler usecase.ErrorHandler[GetArticleResult],
+	articleRepo repository.Article,
+	favoriteRepo repository.Favorite,
+) GetArticleInputPort {
 	return &GetArticle{
 		errorHandler: errorHandler,
 		repository: struct {
-			article repository.Article
+			article   repository.Article
+			favorites repository.Favorite
 		}{
-			article: articleRepo,
+			article:   articleRepo,
+			favorites: favoriteRepo,
 		},
 	}
 }
@@ -56,9 +64,14 @@ func (a *GetArticle) Get(ctx context.Context, slugStr string) *usecase.Result[Ge
 	if err != nil {
 		return a.errorHandler.Handle(ctx, err, usecase.WithNotFoundHandler(derrors.Errors.NotFound.Err))
 	}
-	// TODO(ryutah): お気に入りリストを取得する
+
+	favorites, err := a.repository.favorites.ListBySlug(ctx, article.Slug)
+	if err != nil {
+		return a.errorHandler.Handle(ctx, err)
+	}
 
 	return usecase.Success(GetArticleResult{
-		Article: *article,
+		Article:   *article,
+		Favorites: favorites,
 	})
 }

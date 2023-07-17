@@ -7,5 +7,5 @@ import (
 )
 
 type Favorite interface {
-	ListBySlug(context.Context, model.Slug) ([]model.Favorite, error)
+	ListBySlug(context.Context, model.Slug) (model.FavoriteSlice, error)
 }

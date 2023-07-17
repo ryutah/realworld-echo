@@ -29,13 +29,20 @@ func Test_GetArticle_Get(t *testing.T) {
 		get_returns_article *model.Article
 		get_returns_error   error
 	}
+	type mocks_favoriteRepository struct {
+		listBySlug_args_slug         model.Slug
+		listBySlug_returns_favorites model.FavoriteSlice
+		listBySlug_returns_error     error
+	}
 	type mocks struct {
-		errorHandler      mocks_errorHandler
-		articleRepository mocks_articleRepository
+		errorHandler       mocks_errorHandler
+		articleRepository  mocks_articleRepository
+		favoriteRepository mocks_favoriteRepository
 	}
 	type configs struct {
 		errorHandler_handle_should_call bool
 		article_get_should_skip         bool
+		favorite_listBySlug_should_skip bool
 	}
 	type args struct {
 		ctx     context.Context
@@ -56,6 +63,17 @@ func Test_GetArticle_Get(t *testing.T) {
 			CreatedAt: now,
 			UpdatedAt: now,
 		}
+		favoriteSlice1 = model.FavoriteSlice{
+			{
+				ArticleSlug: article1.Slug,
+				UserID:      "user1",
+			},
+			{
+				ArticleSlug: article1.Slug,
+				UserID:      "user2",
+			},
+		}
+		failResult = usecase.Fail[GetArticleResult](usecase.NewFailResult(usecase.FailTypeInternalError, "error"))
 	)
 
 	tests := []struct {
@@ -77,9 +95,15 @@ func Test_GetArticle_Get(t *testing.T) {
 					get_returns_article: &article1,
 					get_returns_error:   nil,
 				},
+				favoriteRepository: mocks_favoriteRepository{
+					listBySlug_args_slug:         article1.Slug,
+					listBySlug_returns_favorites: favoriteSlice1,
+					listBySlug_returns_error:     nil,
+				},
 			},
 			wants: usecase.Success(GetArticleResult{
-				Article: article1,
+				Article:   article1,
+				Favorites: favoriteSlice1,
 			}),
 		},
 		{
@@ -92,7 +116,7 @@ func Test_GetArticle_Get(t *testing.T) {
 				errorHandler: mocks_errorHandler{
 					handle_args_error:       dummyError,
 					handle_args_opts_length: 1,
-					handle_returns_result:   usecase.Fail[GetArticleResult](usecase.NewFailResult(usecase.FailTypeNotFound, "error")),
+					handle_returns_result:   failResult,
 				},
 				articleRepository: mocks_articleRepository{
 					get_args_slugStr:    "notexists",
@@ -100,9 +124,10 @@ func Test_GetArticle_Get(t *testing.T) {
 					get_returns_error:   dummyError,
 				},
 			},
-			wants: usecase.Fail[GetArticleResult](usecase.NewFailResult(usecase.FailTypeNotFound, "error")),
+			wants: failResult,
 			configs: configs{
 				errorHandler_handle_should_call: true,
+				favorite_listBySlug_should_skip: true,
 			},
 		},
 		{
@@ -115,13 +140,41 @@ func Test_GetArticle_Get(t *testing.T) {
 				errorHandler: mocks_errorHandler{
 					handle_args_error:       derrors.Errors.Validation.Err,
 					handle_args_opts_length: 1,
-					handle_returns_result:   usecase.Fail[GetArticleResult](usecase.NewFailResult(usecase.FailTypeBadRequest, "error")),
+					handle_returns_result:   failResult,
 				},
 			},
-			wants: usecase.Fail[GetArticleResult](usecase.NewFailResult(usecase.FailTypeBadRequest, "error")),
+			wants: failResult,
 			configs: configs{
 				errorHandler_handle_should_call: true,
 				article_get_should_skip:         true,
+				favorite_listBySlug_should_skip: true,
+			},
+		},
+		{
+			name: "when_favorite_listBySlug_return_error_should_call_ErrorHandler_and_return_fail_result",
+			args: args{
+				ctx:     context.TODO(),
+				slugStr: "slug",
+			},
+			mocks: mocks{
+				errorHandler: mocks_errorHandler{
+					handle_args_error:       dummyError,
+					handle_args_opts_length: 0,
+					handle_returns_result:   failResult,
+				},
+				articleRepository: mocks_articleRepository{
+					get_args_slugStr:    "slug",
+					get_returns_article: &article1,
+					get_returns_error:   nil,
+				},
+				favoriteRepository: mocks_favoriteRepository{
+					listBySlug_args_slug:     article1.Slug,
+					listBySlug_returns_error: dummyError,
+				},
+			},
+			wants: failResult,
+			configs: configs{
+				errorHandler_handle_should_call: true,
 			},
 		},
 	}
@@ -129,6 +182,7 @@ func Test_GetArticle_Get(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			errorHandler := mock_usecase.NewMockErrorHandler[GetArticleResult]()
 			article := mock_repository.NewMockArticle()
+			favorite := mock_repository.NewMockFavorite()
 
 			if tt.configs.errorHandler_handle_should_call {
 				errorHandler.On(
@@ -154,8 +208,18 @@ func Test_GetArticle_Get(t *testing.T) {
 					tt.mocks.articleRepository.get_returns_error,
 				)
 			}
+			if !tt.configs.favorite_listBySlug_should_skip {
+				favorite.On(
+					mock_repository.FavroteFuncNames.ListBySlug,
+					mock.Anything,
+					tt.mocks.favoriteRepository.listBySlug_args_slug,
+				).Return(
+					tt.mocks.favoriteRepository.listBySlug_returns_favorites,
+					tt.mocks.favoriteRepository.listBySlug_returns_error,
+				)
+			}
 
-			a := NewGetArticle(errorHandler, article)
+			a := NewGetArticle(errorHandler, article, favorite)
 			result := a.Get(tt.args.ctx, tt.args.slugStr)
 
 			assert.Equal(t, tt.wants, result)
