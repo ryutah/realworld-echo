@@ -21,6 +21,7 @@ type (
 	Email     string
 	URL       string
 	JSTTime   time.Time
+	Count     uint
 )
 
 func NewUID(s string) (UID, error) {
@@ -125,6 +126,18 @@ func NewJSTTime(t time.Time) JSTTime {
 
 func (j JSTTime) Time() time.Time {
 	return time.Time(j)
+}
+
+func NewCount(i uint) Count {
+	return Count(i)
+}
+
+func (c Count) Uint() uint {
+	return uint(c)
+}
+
+func (c Count) Int() int {
+	return int(c)
 }
 
 func email() string {

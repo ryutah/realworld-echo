@@ -345,3 +345,38 @@ func TestURL(t *testing.T) {
 		})
 	}
 }
+
+func TestNewCount(t *testing.T) {
+	type args struct {
+		i uint
+	}
+	type wants struct {
+		uint uint
+		int  int
+	}
+
+	tests := []struct {
+		name  string
+		args  args
+		wants wants
+	}{
+		{
+			name: "valid_count",
+			args: args{
+				i: 100,
+			},
+			wants: wants{
+				uint: 100,
+				int:  100,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NewCount(tt.args.i)
+			assert.Equal(t, tt.wants.uint, got.Uint())
+			assert.Equal(t, tt.wants.int, got.Int())
+		})
+	}
+}
