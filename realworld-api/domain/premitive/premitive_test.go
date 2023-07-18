@@ -346,7 +346,7 @@ func TestURL(t *testing.T) {
 	}
 }
 
-func TestNewCount(t *testing.T) {
+func TestOffset(t *testing.T) {
 	type args struct {
 		i uint
 	}
@@ -361,7 +361,7 @@ func TestNewCount(t *testing.T) {
 		wants wants
 	}{
 		{
-			name: "valid_count",
+			name: "valid_offset",
 			args: args{
 				i: 100,
 			},
@@ -374,9 +374,60 @@ func TestNewCount(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewCount(tt.args.i)
+			got := NewOffset(tt.args.i)
 			assert.Equal(t, tt.wants.uint, got.Uint())
 			assert.Equal(t, tt.wants.int, got.Int())
+		})
+	}
+}
+
+func TestLimit(t *testing.T) {
+	type expected struct {
+		uint uint
+		int
+		err error
+	}
+
+	tests := []struct {
+		name     string
+		limit    uint
+		expected expected
+	}{
+		{
+			name:  "valid_limit",
+			limit: 100,
+			expected: expected{
+				uint: 100,
+				int:  100,
+				err:  nil,
+			},
+		},
+		{
+			name:  "valid_max_limit",
+			limit: 1000,
+			expected: expected{
+				uint: 1000,
+				int:  1000,
+				err:  nil,
+			},
+		},
+		{
+			name:  "invalid_max_limit",
+			limit: 1001,
+			expected: expected{
+				err: derrors.Errors.Validation.Err,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := NewLimit(test.limit)
+			assert.Equal(t, test.expected.uint, got.Uint())
+			assert.Equal(t, test.expected.int, got.Int())
+			if !assert.ErrorIs(t, err, test.expected.err) {
+				t.Logf("error: %+v", err)
+			}
 		})
 	}
 }

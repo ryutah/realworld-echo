@@ -7,6 +7,7 @@ import (
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/repository"
 	authmodel "github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
+	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtrace"
 	"github.com/ryutah/realworld-echo/realworld-api/usecase"
 )
@@ -16,6 +17,8 @@ type (
 		Tag         string
 		Author      string
 		FavoritedBy string
+		Limit       uint
+		Offset      uint
 	}
 	ListArticleResult struct {
 		Articles []model.Article
@@ -30,6 +33,8 @@ func (l ListArticleParam) toSearchParam() (*repository.ArticleSearchParam, error
 		tag          *model.ArticleTag
 		pauthor      *authmodel.UserID
 		pfavoritedBy *authmodel.UserID
+		offset       premitive.Offset
+		limit        = repository.DefaultLimit
 		err          error
 	)
 
@@ -53,11 +58,22 @@ func (l ListArticleParam) toSearchParam() (*repository.ArticleSearchParam, error
 		}
 		pfavoritedBy = &favoritedBy
 	}
+	if l.Offset > 0 {
+		offset = premitive.NewOffset(l.Offset)
+	}
+	if l.Limit > 0 {
+		limit, err = premitive.NewLimit(l.Limit)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return &repository.ArticleSearchParam{
 		Tag:         tag,
 		Author:      pauthor,
 		FavoritedBy: pfavoritedBy,
+		Offset:      offset,
+		Limit:       limit,
 	}, nil
 }
 

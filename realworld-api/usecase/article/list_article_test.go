@@ -77,6 +77,8 @@ func Test_ListArticle_List(t *testing.T) {
 					Tag:         "tag",
 					Author:      "author",
 					FavoritedBy: "favorited_by",
+					Offset:      10,
+					Limit:       20,
 				},
 			},
 			mocks: mocks{
@@ -85,6 +87,8 @@ func Test_ListArticle_List(t *testing.T) {
 						Tag:         tag,
 						Author:      &authID,
 						FavoritedBy: &favoritedBy,
+						Offset:      10,
+						Limit:       20,
 					},
 					search_retunrs_articles: []model.Article{
 						{Slug: "dummy"},
@@ -138,8 +142,10 @@ func Test_ListArticle_List(t *testing.T) {
 					handle_returns_result:   internalErrorResult,
 				},
 				articleRepository: mocks_articleRepository{
-					search_args_articleSearchParam: repository.ArticleSearchParam{},
-					search_results_error:           dummyError,
+					search_args_articleSearchParam: repository.ArticleSearchParam{
+						Limit: repository.DefaultLimit,
+					},
+					search_results_error: dummyError,
 				},
 			},
 			wants: wants{
@@ -186,7 +192,7 @@ func Test_ListArticle_List(t *testing.T) {
 	}
 }
 
-func TestListArticleParam_toSearchParam(t *testing.T) {
+func TestListArticleParam_ToSearchParam(t *testing.T) {
 	type fields struct {
 		Tag         string
 		Author      string
@@ -209,12 +215,16 @@ func TestListArticleParam_toSearchParam(t *testing.T) {
 				Tag:         "tag",
 				Author:      "author",
 				FavoritedBy: "favorited_by",
+				Offset:      10,
+				Limit:       20,
 			},
 			want: wants{
 				param: &repository.ArticleSearchParam{
 					Tag:         mustNewTag("tag"),
 					Author:      pointer.Pointer[authmodel.UserID]("author"),
 					FavoritedBy: pointer.Pointer[authmodel.UserID]("favorited_by"),
+					Offset:      10,
+					Limit:       20,
 				},
 				err: nil,
 			},
@@ -223,8 +233,10 @@ func TestListArticleParam_toSearchParam(t *testing.T) {
 			name:   "blank_params_should_returns_expected_result",
 			target: ListArticleParam{},
 			want: wants{
-				param: &repository.ArticleSearchParam{},
-				err:   nil,
+				param: &repository.ArticleSearchParam{
+					Limit: repository.DefaultLimit,
+				},
+				err: nil,
 			},
 		},
 		{
@@ -249,6 +261,15 @@ func TestListArticleParam_toSearchParam(t *testing.T) {
 			name: "invalid_favarited_by_should_returns_validation_error",
 			target: ListArticleParam{
 				FavoritedBy: strings.Repeat("a", 10000),
+			},
+			want: wants{
+				err: derrors.Errors.Validation.Err,
+			},
+		},
+		{
+			name: "invalid_limit_should_returns_validation_error",
+			target: ListArticleParam{
+				Limit: 1000000,
 			},
 			want: wants{
 				err: derrors.Errors.Validation.Err,

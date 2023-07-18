@@ -5,12 +5,15 @@ import (
 
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
 	authmodel "github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
+	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
 )
 
 type ArticleSearchParam struct {
 	Tag         *model.ArticleTag
 	Author      *authmodel.UserID
 	FavoritedBy *authmodel.UserID
+	Limit       premitive.Limit
+	Offset      premitive.Offset
 }
 
 type Article interface {

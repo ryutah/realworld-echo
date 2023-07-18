@@ -27,7 +27,7 @@ var Errors = struct {
 }
 
 func NewValidationError(depth int, err error) error {
-	newErr := cerrors.WrapWithDepth(1, Errors.Validation.Err, Errors.Validation.Message)
+	newErr := cerrors.WrapWithDepth(depth+1, Errors.Validation.Err, Errors.Validation.Message)
 
 	verrs, ok := err.(validator.ValidationErrors)
 	if !ok {

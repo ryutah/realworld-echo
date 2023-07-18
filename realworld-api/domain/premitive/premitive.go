@@ -21,7 +21,8 @@ type (
 	Email     string
 	URL       string
 	JSTTime   time.Time
-	Count     uint
+	Offset    uint
+	Limit     uint
 )
 
 func NewUID(s string) (UID, error) {
@@ -128,16 +129,32 @@ func (j JSTTime) Time() time.Time {
 	return time.Time(j)
 }
 
-func NewCount(i uint) Count {
-	return Count(i)
+func NewOffset(i uint) Offset {
+	return Offset(i)
 }
 
-func (c Count) Uint() uint {
+func (c Offset) Uint() uint {
 	return uint(c)
 }
 
-func (c Count) Int() int {
+func (c Offset) Int() int {
 	return int(c)
+}
+
+func NewLimit(i uint) (Limit, error) {
+	return withValidate(
+		i,
+		func() Limit { return Limit(i) },
+		max(1000),
+	)
+}
+
+func (l Limit) Uint() uint {
+	return uint(l)
+}
+
+func (l Limit) Int() int {
+	return int(l)
 }
 
 func email() string {
