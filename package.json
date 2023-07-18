@@ -1,0 +1,15 @@
+{
+  "name": "realworld-echo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "emulator:start": "firebase emulators:start --only functions"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "firebase-tools": "^12.4.4"
+  }
+}

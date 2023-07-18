@@ -91,12 +91,16 @@ type SignUpProps = {
     password: string;
   }) => void;
   onChangeEmail?: (email: string) => void;
+  testIds?: {
+    signup?: string;
+  };
 };
 
 export default function SignUp({
   duplicateEmail = false,
   onSubmit,
   onChangeEmail,
+  testIds,
 }: SignUpProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -114,7 +118,7 @@ export default function SignUp({
   };
 
   return (
-    <div className="auth-page">
+    <div data-testid={testIds?.signup} className="auth-page">
       <div className="container page">
         <div className="row">
           <div className="col-md-6 offset-md-3 col-xs-12">

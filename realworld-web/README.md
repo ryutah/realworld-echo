@@ -32,3 +32,12 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+---
+
+## References
+
+- [Next.js プロジェクトに Jest をセットアップする方法](https://zenn.dev/shootacean/articles/how-to-set-up-jest-in-a-nextjs-project)
+- [Optimizing: Testing | Next.js](https://nextjs.org/docs/pages/building-your-application/optimizing/testing#setting-up-jest-with-the-rust-compiler)
+- [テストのレシピ集 – React](https://ja.legacy.reactjs.org/docs/testing-recipes.html)
+- [Avoid Hard Coding data-testid. A Guide to Avoiding False Positives | by Kavian Rabbani | Medium](https://medium.com/@kavianrabbani/the-hidden-danger-of-hardcoded-data-testid-in-testing-8ec9e671955e)
