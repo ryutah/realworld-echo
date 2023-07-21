@@ -89,11 +89,10 @@ func Test_ErrorHandler_Handle(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			errorReporter := mock_usecase.NewMockErrorReporter()
+			errorReporter := mock_usecase.NewMockErrorReporter(t)
 
 			if tt.configs.isInternalError {
-				errorReporter.On(
-					mock_usecase.ErrorReporterFuncNames.Report,
+				errorReporter.EXPECT().Report(
 					mock.Anything,
 					tt.mocks.errorReporter.report_args_error,
 					mock.Anything,

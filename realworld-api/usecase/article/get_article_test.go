@@ -180,28 +180,24 @@ func Test_GetArticle_Get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			errorHandler := mock_usecase.NewMockErrorHandler[GetArticleResult]()
-			article := mock_repository.NewMockArticle()
-			favorite := mock_repository.NewMockFavorite()
+			errorHandler := mock_usecase.NewMockErrorHandler[GetArticleResult](t)
+			article := mock_repository.NewMockArticle(t)
+			favorite := mock_repository.NewMockFavorite(t)
 
 			if tt.configs.errorHandler_handle_should_call {
-				errorHandler.On(
-					mock_usecase.ErrorHandlerFuncNames.Handle,
-					mock.Anything, mock.Anything, mock.IsType([]usecase.ErrorHandlerOption{}),
+				errorHandler.EXPECT().Handle(
+					mock.Anything, mock.Anything, mock.Anything,
 				).Run(
-					func(args mock.Arguments) {
-						assert.ErrorIs(t, args.Error(1), tt.mocks.errorHandler.handle_args_error, "error of ErrorHandler#Handle args")
-						if v, ok := args.Get(2).([]usecase.ErrorHandlerOption); ok {
-							assert.Len(t, v, tt.mocks.errorHandler.handle_args_opts_length, "length of ErrorHandler#Hanel option args")
-						}
+					func(ctx context.Context, err error, opts ...usecase.ErrorHandlerOption) {
+						assert.ErrorIs(t, err, tt.mocks.errorHandler.handle_args_error, "error of ErrorHandler#Handle args")
+						assert.Len(t, opts, tt.mocks.errorHandler.handle_args_opts_length, "length of ErrorHandler#Hanel option args")
 					},
 				).Return(
 					tt.mocks.errorHandler.handle_returns_result,
 				)
 			}
 			if !tt.configs.article_get_should_skip {
-				article.On(
-					mock_repository.ArticleFuncNames.Get,
+				article.EXPECT().Get(
 					mock.Anything, tt.mocks.articleRepository.get_args_slugStr,
 				).Return(
 					tt.mocks.articleRepository.get_returns_article,
@@ -209,8 +205,7 @@ func Test_GetArticle_Get(t *testing.T) {
 				)
 			}
 			if !tt.configs.favorite_listBySlug_should_skip {
-				favorite.On(
-					mock_repository.FavroteFuncNames.ListBySlug,
+				favorite.EXPECT().ListBySlug(
 					mock.Anything,
 					tt.mocks.favoriteRepository.listBySlug_args_slug,
 				).Return(
@@ -221,10 +216,7 @@ func Test_GetArticle_Get(t *testing.T) {
 
 			a := NewGetArticle(errorHandler, article, favorite)
 			result := a.Get(tt.args.ctx, tt.args.slugStr)
-
 			assert.Equal(t, tt.wants, result)
-			errorHandler.AssertExpectations(t)
-			article.AssertExpectations(t)
 		})
 	}
 }

@@ -159,25 +159,21 @@ func Test_ListArticle_List(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			errorHandler := mock_usecase.NewMockErrorHandler[ListArticleResult]()
-			articleRepository := mock_repository.NewMockArticle()
+			errorHandler := mock_usecase.NewMockErrorHandler[ListArticleResult](t)
+			articleRepository := mock_repository.NewMockArticle(t)
 
 			if tt.configs.errorHandler_handle_should_call {
-				errorHandler.On(
-					mock_usecase.ErrorHandlerFuncNames.Handle,
+				errorHandler.EXPECT().Handle(
 					mock.Anything, mock.Anything, mock.Anything,
-				).Run(func(args mock.Arguments) {
-					assert.ErrorIs(t, args.Error(1), tt.mocks.errorHandler.handle_args_error, "error of ErrorHandler#Handle args")
-					if v, ok := args.Get(2).([]usecase.ErrorHandlerOption); ok {
-						assert.Len(t, v, tt.mocks.errorHandler.handle_args_opts_length, "length of ErrorHandler#Hanel option args")
-					}
+				).Run(func(ctx context.Context, err error, opts ...usecase.ErrorHandlerOption) {
+					assert.ErrorIs(t, err, tt.mocks.errorHandler.handle_args_error, "error of ErrorHandler#Handle args")
+					assert.Len(t, opts, tt.mocks.errorHandler.handle_args_opts_length, "length of ErrorHandler#Hanel option args")
 				}).Return(
 					tt.mocks.errorHandler.handle_returns_result,
 				)
 			}
 			if !tt.configs.article_search_should_skip {
-				articleRepository.On(
-					mock_repository.ArticleFuncNames.Search,
+				articleRepository.EXPECT().Search(
 					mock.Anything, tt.mocks.articleRepository.search_args_articleSearchParam,
 				).Return(
 					tt.mocks.articleRepository.search_retunrs_articles,

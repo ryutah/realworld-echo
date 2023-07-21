@@ -1,0 +1,12 @@
+with-expecter: true
+packages:
+  github.com/ryutah/realworld-echo/realworld-api/usecase:
+    config:
+      dir: internal/mock/usecase
+    interfaces:
+      ErrorHandler:
+      ErrorReporter:
+  github.com/ryutah/realworld-echo/realworld-api/domain/article/repository:
+    config:
+      dir: internal/mock/repository
+      all: true
