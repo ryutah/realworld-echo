@@ -144,11 +144,26 @@ func TestName(t *testing.T) {
 		expected expected
 	}{
 		{
-			name: "valid_title",
+			name: "valid_name",
 			n:    "valid",
 			expected: expected{
 				name: "valid",
 				err:  nil,
+			},
+		},
+		{
+			name: "max_length_name",
+			n:    strings.Repeat("a", 255),
+			expected: expected{
+				name: strings.Repeat("a", 255),
+				err:  nil,
+			},
+		},
+		{
+			name: "invalid_length_name",
+			n:    strings.Repeat("a", 256),
+			expected: expected{
+				err: derrors.Errors.Validation.Err,
 			},
 		},
 	}

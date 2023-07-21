@@ -65,6 +65,7 @@ func NewName(s string) (Name, error) {
 	return withValidate(
 		s,
 		func() Name { return Name(s) },
+		max(255),
 	)
 }
 
