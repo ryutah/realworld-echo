@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/ryutah/realworld-echo/realworld-api/domain/auth/service"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xerrorreport"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xlog"
 )
@@ -31,11 +32,19 @@ type ErrorHandler[R any] interface {
 
 type errorHandler[R any] struct {
 	errorReporter ErrorReporter
+	service       struct {
+		auth service.Auth
+	}
 }
 
-func NewErrorHandler[R any](reporter ErrorReporter) ErrorHandler[R] {
+func NewErrorHandler[R any](reporter ErrorReporter, authService service.Auth) ErrorHandler[R] {
 	return &errorHandler[R]{
 		errorReporter: reporter,
+		service: struct {
+			auth service.Auth
+		}{
+			auth: authService,
+		},
 	}
 }
 
@@ -53,10 +62,14 @@ func (e *errorHandler[R]) Handle(ctx context.Context, err error, opts ...ErrorHa
 		}
 	}
 
+	var uid string
+	if user, err := e.service.auth.CurrentUser(ctx); err != nil {
+		uid = user.ID.String()
+	}
 	xlog.Debug(ctx, "render internal error")
 	file, line, fn, _ := errors.GetOneLineSource(err)
 	e.errorReporter.Report(ctx, err, xerrorreport.ErrorContext{
-		User: "", // TODO: should be get user id from context
+		User: uid,
 		Location: xerrorreport.Location{
 			File:     file,
 			Line:     line,

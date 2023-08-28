@@ -50,7 +50,7 @@ func TestNewFavorite(t *testing.T) {
 					ArticleSlug: "slug",
 					UserID:      "user_id",
 					CreatedAt:   premitive.NewJSTTime(now),
-					UpdateAt:    premitive.NewJSTTime(now),
+					UpdatedAt:   premitive.NewJSTTime(now),
 				},
 				err: nil,
 			},

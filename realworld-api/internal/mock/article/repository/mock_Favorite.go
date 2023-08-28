@@ -77,6 +77,75 @@ func (_c *MockFavorite_ListBySlug_Call) RunAndReturn(run func(context.Context, m
 	return _c
 }
 
+// ListBySlugs provides a mock function with given fields: _a0, _a1
+func (_m *MockFavorite) ListBySlugs(_a0 context.Context, _a1 ...model.Slug) (model.FavoriteSliceMap, error) {
+	_va := make([]interface{}, len(_a1))
+	for _i := range _a1 {
+		_va[_i] = _a1[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _a0)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 model.FavoriteSliceMap
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...model.Slug) (model.FavoriteSliceMap, error)); ok {
+		return rf(_a0, _a1...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ...model.Slug) model.FavoriteSliceMap); ok {
+		r0 = rf(_a0, _a1...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(model.FavoriteSliceMap)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ...model.Slug) error); ok {
+		r1 = rf(_a0, _a1...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockFavorite_ListBySlugs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListBySlugs'
+type MockFavorite_ListBySlugs_Call struct {
+	*mock.Call
+}
+
+// ListBySlugs is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 ...model.Slug
+func (_e *MockFavorite_Expecter) ListBySlugs(_a0 interface{}, _a1 ...interface{}) *MockFavorite_ListBySlugs_Call {
+	return &MockFavorite_ListBySlugs_Call{Call: _e.mock.On("ListBySlugs",
+		append([]interface{}{_a0}, _a1...)...)}
+}
+
+func (_c *MockFavorite_ListBySlugs_Call) Run(run func(_a0 context.Context, _a1 ...model.Slug)) *MockFavorite_ListBySlugs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]model.Slug, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(model.Slug)
+			}
+		}
+		run(args[0].(context.Context), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *MockFavorite_ListBySlugs_Call) Return(_a0 model.FavoriteSliceMap, _a1 error) *MockFavorite_ListBySlugs_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockFavorite_ListBySlugs_Call) RunAndReturn(run func(context.Context, ...model.Slug) (model.FavoriteSliceMap, error)) *MockFavorite_ListBySlugs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMockFavorite creates a new instance of MockFavorite. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMockFavorite(t interface {

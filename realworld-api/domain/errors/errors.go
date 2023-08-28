@@ -13,8 +13,9 @@ type errorAndMessage struct {
 }
 
 var Errors = struct {
-	Validation errorAndMessage
-	NotFound   errorAndMessage
+	Validation    errorAndMessage
+	NotFound      errorAndMessage
+	NotAuthorized errorAndMessage
 }{
 	Validation: errorAndMessage{
 		Err:     errors.New("validation_error"),
@@ -23,6 +24,10 @@ var Errors = struct {
 	NotFound: errorAndMessage{
 		Err:     errors.New("not_found"),
 		Message: "specified entity is not found",
+	},
+	NotAuthorized: errorAndMessage{
+		Err:     errors.New("not_authorized"),
+		Message: "not authorized to perform this action",
 	},
 }
 

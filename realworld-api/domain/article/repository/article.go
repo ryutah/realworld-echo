@@ -20,5 +20,5 @@ type Article interface {
 	GenerateID(context.Context) (model.Slug, error)
 	Get(context.Context, model.Slug) (*model.Article, error)
 	Save(context.Context, model.Article) error
-	Search(context.Context, ArticleSearchParam) ([]model.Article, error)
+	Search(context.Context, ArticleSearchParam) (model.ArticleSlice, error)
 }

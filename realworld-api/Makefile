@@ -12,7 +12,7 @@ init: ## initialize projects
 	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.12.4
 	go install github.com/vektra/mockery/v2@v2.32.0
 	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.16.2
-	pip install sqlfluff==2.1.2
+	pip install 'shandy-sqlfmt[jinjafmt]'==0.19.2
 
 .PHONY: generate
 generate: generate/oapi generate/mock generate/go ## run all generate task
@@ -56,7 +56,7 @@ db/up: ## start database server
 	  postgres:15.3-bullseye
 
 .PHONY: migrates/create
-migrates/create: ## create new migrate file
+migrates/create: ## create new migrate file. ex) make migrates/create MIGRATE_NAME=adds_comments_to_user
 	migrate create -dir ./resources/migrations -ext sql -seq -tz Asia/Tokyo ${MIGRATE_NAME}
 
 .PHONY: migrates/up
@@ -75,7 +75,7 @@ migrates/down: ## run migrate down
 
 .PHONY: format
 format: ## format codes
-	sqlfluff format  --dialect postgres ./resources/migrations/*.sql
+	sqlfmt ./resources/migrations
 
 .PHONY: test
 test: ## run unit test

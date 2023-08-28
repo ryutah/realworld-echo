@@ -8,5 +8,9 @@ packages:
       ErrorReporter:
   github.com/ryutah/realworld-echo/realworld-api/domain/article/repository:
     config:
-      dir: internal/mock/repository
+      dir: internal/mock/article/repository
+      all: true
+  github.com/ryutah/realworld-echo/realworld-api/domain/auth/service:
+    config:
+      dir: internal/mock/auth/service
       all: true

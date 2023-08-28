@@ -8,4 +8,5 @@ import (
 
 type Favorite interface {
 	ListBySlug(context.Context, model.Slug) (model.FavoriteSlice, error)
+	ListBySlugs(context.Context, ...model.Slug) (model.FavoriteSliceMap, error)
 }

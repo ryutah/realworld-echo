@@ -175,19 +175,19 @@ func (_c *MockArticle_Save_Call) RunAndReturn(run func(context.Context, model.Ar
 }
 
 // Search provides a mock function with given fields: _a0, _a1
-func (_m *MockArticle) Search(_a0 context.Context, _a1 repository.ArticleSearchParam) ([]model.Article, error) {
+func (_m *MockArticle) Search(_a0 context.Context, _a1 repository.ArticleSearchParam) (model.ArticleSlice, error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 []model.Article
+	var r0 model.ArticleSlice
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, repository.ArticleSearchParam) ([]model.Article, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, repository.ArticleSearchParam) (model.ArticleSlice, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, repository.ArticleSearchParam) []model.Article); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, repository.ArticleSearchParam) model.ArticleSlice); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.Article)
+			r0 = ret.Get(0).(model.ArticleSlice)
 		}
 	}
 
@@ -219,12 +219,12 @@ func (_c *MockArticle_Search_Call) Run(run func(_a0 context.Context, _a1 reposit
 	return _c
 }
 
-func (_c *MockArticle_Search_Call) Return(_a0 []model.Article, _a1 error) *MockArticle_Search_Call {
+func (_c *MockArticle_Search_Call) Return(_a0 model.ArticleSlice, _a1 error) *MockArticle_Search_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockArticle_Search_Call) RunAndReturn(run func(context.Context, repository.ArticleSearchParam) ([]model.Article, error)) *MockArticle_Search_Call {
+func (_c *MockArticle_Search_Call) RunAndReturn(run func(context.Context, repository.ArticleSearchParam) (model.ArticleSlice, error)) *MockArticle_Search_Call {
 	_c.Call.Return(run)
 	return _c
 }

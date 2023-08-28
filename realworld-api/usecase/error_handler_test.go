@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/errors"
+	"github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
+	mock_auth_service "github.com/ryutah/realworld-echo/realworld-api/internal/mock/auth/service"
 	mock_usecase "github.com/ryutah/realworld-echo/realworld-api/internal/mock/usecase"
 	. "github.com/ryutah/realworld-echo/realworld-api/usecase"
 	"github.com/stretchr/testify/assert"
@@ -18,8 +20,13 @@ func Test_ErrorHandler_Handle(t *testing.T) {
 	type mocks_errorReporter struct {
 		report_args_error error
 	}
+	type mocks_authService struct {
+		currentUser_returns_user  *model.User
+		currentUser_returns_error error
+	}
 	type mocks struct {
 		errorReporter mocks_errorReporter
+		authService   mocks_authService
 	}
 	type configs struct {
 		isInternalError bool
@@ -76,6 +83,11 @@ func Test_ErrorHandler_Handle(t *testing.T) {
 				errorReporter: mocks_errorReporter{
 					report_args_error: dummyError,
 				},
+				authService: mocks_authService{
+					currentUser_returns_user: &model.User{
+						ID: "user_id",
+					},
+				},
 			},
 			configs: configs{
 				isInternalError: true,
@@ -90,6 +102,7 @@ func Test_ErrorHandler_Handle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errorReporter := mock_usecase.NewMockErrorReporter(t)
+			authService := mock_auth_service.NewMockAuth(t)
 
 			if tt.configs.isInternalError {
 				errorReporter.EXPECT().Report(
@@ -97,9 +110,15 @@ func Test_ErrorHandler_Handle(t *testing.T) {
 					tt.mocks.errorReporter.report_args_error,
 					mock.Anything,
 				)
+				authService.EXPECT().
+					CurrentUser(mock.Anything).
+					Return(
+						tt.mocks.authService.currentUser_returns_user,
+						tt.mocks.authService.currentUser_returns_error,
+					)
 			}
 
-			e := NewErrorHandler[any](errorReporter)
+			e := NewErrorHandler[any](errorReporter, authService)
 			got := e.Handle(tt.args.ctx, tt.args.err, tt.args.opts...)
 			assert.Equal(t, tt.wants.result, got)
 			errorReporter.AssertExpectations(t)

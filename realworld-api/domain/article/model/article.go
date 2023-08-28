@@ -6,7 +6,16 @@ import (
 	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtime"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xvalidator"
+	"github.com/samber/lo"
 )
+
+type ArticleSlice []Article
+
+func (a ArticleSlice) Slugs() []Slug {
+	return lo.Map(a, func(item Article, _ int) Slug {
+		return item.Slug
+	})
+}
 
 type Article struct {
 	Slug      Slug             `validate:"required"`

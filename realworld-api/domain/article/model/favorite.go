@@ -13,7 +13,7 @@ type Favorite struct {
 	ArticleSlug Slug              `validate:"required"`
 	UserID      authmodel.UserID  `validate:"required"`
 	CreatedAt   premitive.JSTTime `validate:"required"`
-	UpdateAt    premitive.JSTTime `validate:"required"`
+	UpdatedAt   premitive.JSTTime `validate:"required"`
 }
 
 func NewFavorite(slug Slug, userID authmodel.UserID) (*Favorite, error) {
@@ -21,7 +21,7 @@ func NewFavorite(slug Slug, userID authmodel.UserID) (*Favorite, error) {
 		ArticleSlug: slug,
 		UserID:      userID,
 		CreatedAt:   premitive.NewJSTTime(xtime.Now()),
-		UpdateAt:    premitive.NewJSTTime(xtime.Now()),
+		UpdatedAt:   premitive.NewJSTTime(xtime.Now()),
 	}
 	if err := xvalidator.Validator().Struct(fav); err != nil {
 		return nil, errors.NewValidationError(0, err)
@@ -36,3 +36,5 @@ func (f FavoriteSlice) IsFavorited(userID authmodel.UserID, slug Slug) bool {
 		return item.UserID == userID && item.ArticleSlug == slug
 	})
 }
+
+type FavoriteSliceMap map[Slug]FavoriteSlice
