@@ -283,3 +283,82 @@ func Test_WithBadRequestHandler(t *testing.T) {
 		})
 	}
 }
+
+func Test_WithUnauthorizedHandler(t *testing.T) {
+	dummyError := errors.WithDetail(errors.New("dummy"), "dummy_error_detail_1")
+	dummyError2 := errors.WithDetail(errors.New("dummy2"), "dummy_error2_detail_1")
+
+	type args struct {
+		errs []error
+	}
+	type calls struct {
+		ctx context.Context
+		err error
+	}
+	type wants struct {
+		result *FailResult
+		ok     bool
+	}
+
+	tests := []struct {
+		name  string
+		args  args
+		calls calls
+		wants wants
+	}{
+		{
+			name: "when_given_any_errors_should_return_expected_result_and_true",
+			args: args{
+				errs: []error{dummyError, dummyError2},
+			},
+			calls: calls{
+				ctx: context.TODO(),
+				err: dummyError,
+			},
+			wants: wants{
+				result: NewFailResult(FailTypeUnauthorized, fmt.Sprintf("%v", dummyError), "dummy_error_detail_1"),
+				ok:     true,
+			},
+		},
+		{
+			name: "when_given_nil_as_error_should_return_nil_and_false",
+			args: args{
+				errs: []error{nil},
+			},
+			calls: calls{
+				ctx: context.TODO(),
+				err: dummyError,
+			},
+			wants: wants{
+				result: nil,
+				ok:     false,
+			},
+		},
+		{
+			name: "when_given_not_match_error_should_return_nil_and_false",
+			args: args{
+				errs: []error{dummyError},
+			},
+			calls: calls{
+				ctx: context.TODO(),
+				err: dummyError2,
+			},
+			wants: wants{
+				result: nil,
+				ok:     false,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opt := WithUnauthorizedHandler(tt.args.errs...)
+			var config ExportErrorHandlerWithoutOutputPortConfig
+			opt(&config)
+
+			got, ok := config.ErrorHandlerOptions()[0](tt.calls.ctx, tt.calls.err)
+			assert.Equal(t, tt.wants.result, got, "result")
+			assert.Equal(t, tt.wants.ok, ok, "ok")
+		})
+	}
+}

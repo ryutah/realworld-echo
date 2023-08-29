@@ -57,7 +57,6 @@ func Test_GetArticle_Get(t *testing.T) {
 		slugStr string
 	}
 
-	var ()
 	var (
 		now        = premitive.NewJSTTime(time.Now())
 		dummyError = errors.New("dummy")

@@ -6,6 +6,7 @@ const (
 	FailTypeInternalError FailType = iota + 1
 	FailTypeBadRequest
 	FailTypeNotFound
+	FailTypeUnauthorized
 )
 
 type FailResult struct {

@@ -103,6 +103,18 @@ func WithNotFoundHandler(targets ...error) ErrorHandlerOption {
 	}
 }
 
+func WithUnauthorizedHandler(targets ...error) ErrorHandlerOption {
+	return func(c *errorHandlerConfig) {
+		c.addErrorHandlerOption(func(ctx context.Context, err error) (*FailResult, bool) {
+			if includeInErrors(err, targets...) {
+				xlog.Debug(ctx, "render unauthorized")
+				return newFaileResult(FailTypeUnauthorized, err), true
+			}
+			return nil, false
+		})
+	}
+}
+
 func newFaileResult(typ FailType, err error) *FailResult {
 	return NewFailResult(
 		typ,
