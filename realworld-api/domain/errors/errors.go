@@ -16,6 +16,7 @@ var Errors = struct {
 	Validation    errorAndMessage
 	NotFound      errorAndMessage
 	NotAuthorized errorAndMessage
+	Internal      errorAndMessage
 }{
 	Validation: errorAndMessage{
 		Err:     errors.New("validation_error"),
@@ -28,6 +29,10 @@ var Errors = struct {
 	NotAuthorized: errorAndMessage{
 		Err:     errors.New("not_authorized"),
 		Message: "not authorized to perform this action",
+	},
+	Internal: errorAndMessage{
+		Err:     errors.New("internal_error"),
+		Message: "internal error",
 	},
 }
 
@@ -42,4 +47,24 @@ func NewValidationError(depth int, err error) error {
 		newErr = cerrors.WithDetail(newErr, ve.Error())
 	}
 	return newErr
+}
+
+func NewNotFoundError(depth int, err error, msg string) error {
+	return cerrors.WithMessage(
+		cerrors.WithDetailf(
+			cerrors.WrapWithDepth(depth+1, Errors.NotFound.Err, Errors.NotFound.Message),
+			"%+v", err,
+		),
+		msg,
+	)
+}
+
+func NewInternalError(depth int, err error, msg string) error {
+	return cerrors.WithMessage(
+		cerrors.WithDetailf(
+			cerrors.WrapWithDepth(depth+1, Errors.Internal.Err, Errors.Internal.Message),
+			"%v: %+v", msg, err,
+		),
+		msg,
+	)
 }

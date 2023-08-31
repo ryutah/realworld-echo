@@ -1,8 +1,7 @@
-CREATE DOMAIN long_text AS TEXT
-CHECK (LENGTH(value) <= 5000);
+create domain long_text as text check (length(value) <= 5000);
 
-CREATE DOMAIN short_text AS TEXT
-CHECK (LENGTH(value) <= 50);
 
-CREATE DOMAIN user_id AS TEXT
-CHECK (LENGTH(value) <= 256);
+create domain short_text as text check (length(value) <= 50);
+
+
+create domain user_id as text check (length(value) <= 256);

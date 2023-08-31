@@ -9,21 +9,32 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	mock_transaction "github.com/ryutah/realworld-echo/realworld-api/internal/mock/transaction"
 	mock_usecase "github.com/ryutah/realworld-echo/realworld-api/internal/mock/usecase"
 )
 
-func mustNewTag(s string) *model.ArticleTag {
-	tag, err := model.NewArticleTag(s)
+func mustNewTagName(s string) *model.TagName {
+	tag, err := model.NewTagName(s)
 	if err != nil {
 		panic(err)
 	}
-	return tag
+	return &tag
 }
 
 type errorHandlerExpectationsOption[T any] struct {
 	HandleArgsError      error
 	HandleArgsOptsLength int
 	HandleReturnsResult  *usecase.Result[T]
+}
+
+func transactionExpectations(t *testing.T, transaction *mock_transaction.MockTransaction) {
+	t.Helper()
+
+	transaction.EXPECT().
+		Run(mock.Anything, mock.Anything).
+		RunAndReturn(func(ctx context.Context, f func(context.Context) error) error {
+			return f(ctx)
+		})
 }
 
 func errorHandlerExpectations[T any](t *testing.T, errorHandler *mock_usecase.MockErrorHandler[T], opt errorHandlerExpectationsOption[T]) {

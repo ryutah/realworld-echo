@@ -12,10 +12,11 @@ init: ## initialize projects
 	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.12.4
 	go install github.com/vektra/mockery/v2@v2.32.0
 	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.16.2
-	pip install 'shandy-sqlfmt[jinjafmt]'==0.19.2
+	go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.20.0
+	npm install -g sql-formatter@12.2.4
 
 .PHONY: generate
-generate: generate/oapi generate/mock generate/go ## run all generate task
+generate: generate/oapi generate/mock generate/go generate/sqlc ## run all generate task
 
 .PHONY: generate/oapi
 generate/oapi: ## generate oapi code
@@ -29,6 +30,10 @@ generate/go: ## run go generate command
 .PHONY: generate/mock
 generate/mock: ## run mock generate
 	mockery
+
+.PHONY: generate/sqlc
+generate/sqlc: ## generate sqlc code
+	sqlc generate
 
 .PHONY: generate/domain_diagram
 generate/domain_diagram: ## generate domain diagram
@@ -75,7 +80,7 @@ migrates/down: ## run migrate down
 
 .PHONY: format
 format: ## format codes
-	sqlfmt ./resources/migrations
+	find ./resources -name '*.sql' | xargs -I {} sql-formatter --fix -c .sql_formatter.json {}
 
 .PHONY: test
 test: ## run unit test

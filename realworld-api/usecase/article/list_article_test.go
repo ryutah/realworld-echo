@@ -63,7 +63,7 @@ func Test_ListArticle_List(t *testing.T) {
 	}
 
 	var (
-		tag, tErr                                           = model.NewArticleTag("tag")
+		tag, tErr                                           = model.NewTagName("tag")
 		authID           authmodel.UserID                   = "author"
 		favoritedBy      authmodel.UserID                   = "favorited_by"
 		dummyError                                          = errors.New("dummy")
@@ -100,7 +100,7 @@ func Test_ListArticle_List(t *testing.T) {
 			mocks: mocks{
 				articleRepository: mocks_articleRepository{
 					search_args_articleSearchParam: repository.ArticleSearchParam{
-						Tag:         tag,
+						Tag:         &tag,
 						Author:      &authID,
 						FavoritedBy: &favoritedBy,
 						Offset:      10,
@@ -167,7 +167,7 @@ func Test_ListArticle_List(t *testing.T) {
 			mocks: mocks{
 				articleRepository: mocks_articleRepository{
 					search_args_articleSearchParam: repository.ArticleSearchParam{
-						Tag:         tag,
+						Tag:         &tag,
 						Author:      &authID,
 						FavoritedBy: &favoritedBy,
 						Offset:      10,
@@ -234,7 +234,7 @@ func Test_ListArticle_List(t *testing.T) {
 			mocks: mocks{
 				articleRepository: mocks_articleRepository{
 					search_args_articleSearchParam: repository.ArticleSearchParam{
-						Tag:         tag,
+						Tag:         &tag,
 						Author:      &authID,
 						FavoritedBy: &favoritedBy,
 						Offset:      10,
@@ -473,7 +473,7 @@ func TestListArticleParam_ToSearchParam(t *testing.T) {
 			},
 			want: wants{
 				param: &repository.ArticleSearchParam{
-					Tag:         mustNewTag("tag"),
+					Tag:         mustNewTagName("tag"),
 					Author:      pointer.Pointer[authmodel.UserID]("author"),
 					FavoritedBy: pointer.Pointer[authmodel.UserID]("favorited_by"),
 					Offset:      10,

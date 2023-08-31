@@ -1,1 +1,1 @@
-DROP TABLE article;
+drop table article;

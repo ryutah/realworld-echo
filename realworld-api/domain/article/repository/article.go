@@ -9,7 +9,7 @@ import (
 )
 
 type ArticleSearchParam struct {
-	Tag         *model.ArticleTag
+	Tag         *model.TagName
 	Author      *authmodel.UserID
 	FavoritedBy *authmodel.UserID
 	Limit       premitive.Limit

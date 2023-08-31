@@ -1,3 +1,7 @@
-DROP DOMAIN long_text;
-DROP DOMAIN short_text;
-DROP DOMAIN user_id;
+drop domain long_text;
+
+
+drop domain short_text;
+
+
+drop domain user_id;

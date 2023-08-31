@@ -18,20 +18,33 @@ func (a ArticleSlice) Slugs() []Slug {
 }
 
 type Article struct {
-	Slug      Slug             `validate:"required"`
+	Slug      Slug `validate:"required"`
+	Tags      []TagName
 	Author    authmodel.UserID `validate:"required"`
 	Contents  ArticleContents
 	CreatedAt premitive.JSTTime `validate:"required"`
 	UpdatedAt premitive.JSTTime `validate:"required"`
 }
 
-func NewArticle(slug Slug, contents ArticleContents, author authmodel.UserID) (*Article, error) {
+func NewArticle(slug Slug, contents ArticleContents, author authmodel.UserID, tags []TagName) (*Article, error) {
+	now := premitive.NewJSTTime(xtime.Now())
+	return ReCreateArticle(slug, contents, author, tags, now, now)
+}
+
+func ReCreateArticle(
+	slug Slug,
+	contents ArticleContents,
+	author authmodel.UserID,
+	tags []TagName,
+	createdAt, updatedAt premitive.JSTTime,
+) (*Article, error) {
 	article := &Article{
 		Slug:      slug,
 		Contents:  contents,
 		Author:    author,
-		CreatedAt: premitive.NewJSTTime(xtime.Now()),
-		UpdatedAt: premitive.NewJSTTime(xtime.Now()),
+		Tags:      tags,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
 	}
 	if err := xvalidator.Validator().Struct(article); err != nil {
 		return nil, errors.NewValidationError(0, err)
@@ -53,8 +66,11 @@ func NewSlug(s string) (Slug, error) {
 	if err != nil {
 		return "", err
 	}
-
-	return Slug(uid), nil
+	slug := Slug(uid)
+	if err := xvalidator.Validator().Var(slug, "required"); err != nil {
+		return "", errors.NewValidationError(0, err)
+	}
+	return slug, nil
 }
 
 func (s Slug) String() string {
@@ -62,13 +78,12 @@ func (s Slug) String() string {
 }
 
 type ArticleContents struct {
-	Tags        []ArticleTag
 	Title       premitive.Title `validate:"required"`
 	Description premitive.LongText
 	Body        premitive.LongText
 }
 
-func NewArticleContents(title, description, body string, tags []ArticleTag) (*ArticleContents, error) {
+func NewArticleContents(title, description, body string) (*ArticleContents, error) {
 	ptitle, err := premitive.NewTitle(title)
 	if err != nil {
 		return nil, err
@@ -83,7 +98,6 @@ func NewArticleContents(title, description, body string, tags []ArticleTag) (*Ar
 	}
 
 	contents := &ArticleContents{
-		Tags:        tags,
 		Title:       ptitle,
 		Description: pdescription,
 		Body:        pbody,
@@ -93,23 +107,4 @@ func NewArticleContents(title, description, body string, tags []ArticleTag) (*Ar
 		return nil, errors.NewValidationError(0, err)
 	}
 	return contents, nil
-}
-
-type ArticleTag struct {
-	Tag premitive.ShortText `validate:"required"`
-}
-
-func NewArticleTag(tag string) (*ArticleTag, error) {
-	ptag, err := premitive.NewShortText(tag)
-	if err != nil {
-		return nil, err
-	}
-
-	articleTag := &ArticleTag{
-		Tag: ptag,
-	}
-	if err := xvalidator.Validator().Struct(articleTag); err != nil {
-		return nil, errors.NewValidationError(0, err)
-	}
-	return articleTag, nil
 }

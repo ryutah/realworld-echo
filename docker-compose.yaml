@@ -1,0 +1,17 @@
+version: "3.8"
+services:
+  db:
+    image: postgres:15.3-bullseye
+    environment:
+      POSTGRES_PASSWORD: psql
+      POSTGRES_USER: psql
+      POSTGRES_DB: realworld
+    ports:
+      - 5432:5432
+  migration:
+    build: ./containers/migrations
+    command: -path=/migrations/ -database postgres://psql:psql@db:5432/realworld?sslmode=disable up
+    environment:
+      WAIT_HOSTS: db:5432
+    volumes:
+      - ./realworld-api/resources/migrations:/migrations

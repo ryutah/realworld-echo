@@ -10,6 +10,6 @@ func (l ListArticleParam) ToSearchParam() (*repository.ArticleSearchParam, error
 	return l.toSearchParam()
 }
 
-func (c CreateArticleParam) ToDomain(slug model.Slug, user *authmodel.User) (*model.Article, error) {
+func (c CreateArticleParam) ToDomain(slug model.Slug, user *authmodel.User) (*model.Article, []model.Tag, error) {
 	return c.toDomain(slug, user)
 }

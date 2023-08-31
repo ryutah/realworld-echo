@@ -3,9 +3,11 @@ package premitive_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
 	. "github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
+	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtime"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -428,6 +430,37 @@ func TestLimit(t *testing.T) {
 			if !assert.ErrorIs(t, err, test.expected.err) {
 				t.Logf("error: %+v", err)
 			}
+		})
+	}
+}
+
+func TestJSTTime(t *testing.T) {
+	type args struct {
+		t time.Time
+	}
+
+	var (
+		now    = time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+		nowJST = xtime.JST(now)
+	)
+
+	tests := []struct {
+		name string
+		args args
+		want time.Time
+	}{
+		{
+			name: "should_return_expected_time",
+			args: args{
+				t: now,
+			},
+			want: nowJST,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NewJSTTime(tt.args.t)
+			assert.Equal(t, tt.want, got.Time())
 		})
 	}
 }

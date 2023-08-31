@@ -14,3 +14,15 @@ packages:
     config:
       dir: internal/mock/auth/service
       all: true
+  github.com/ryutah/realworld-echo/realworld-api/domain/transaction:
+    config:
+      dir: internal/mock/transaction
+      all: true
+  github.com/ryutah/realworld-echo/realworld-api/infrastructure/psql/sqlc:
+    config:
+      dir: internal/mock/psql/sqlc
+      all: true
+  github.com/ryutah/realworld-echo/realworld-api/infrastructure/psql/sqlc/gen:
+    config:
+      dir: internal/mock/psql/sqlc/gen
+      all: true

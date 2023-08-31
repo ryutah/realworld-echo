@@ -116,7 +116,7 @@ func (a *ListArticle[Ret]) generateResult(articles model.ArticleSlice, favorites
 
 func (l ListArticleParam) toSearchParam() (*repository.ArticleSearchParam, error) {
 	var (
-		tag          *model.ArticleTag
+		tag          *model.TagName
 		pauthor      *authmodel.UserID
 		pfavoritedBy *authmodel.UserID
 		offset       premitive.Offset
@@ -125,10 +125,11 @@ func (l ListArticleParam) toSearchParam() (*repository.ArticleSearchParam, error
 	)
 
 	if l.Tag != "" {
-		tag, err = model.NewArticleTag(l.Tag)
+		t, err := model.NewTagName(l.Tag)
 		if err != nil {
 			return nil, err
 		}
+		tag = &t
 	}
 	if l.Author != "" {
 		author, err := authmodel.NewUserID(l.Author)
