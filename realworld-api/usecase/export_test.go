@@ -2,14 +2,14 @@ package usecase
 
 // export for error_handler.go
 
-type ExportErrorHandlerWithoutOutputPortConfig = errorHandlerConfig
+type ErrorHandlerConifg = errorHandlerConfig
 
-type ErrorHandlerWithoutOutputPortErrorHandleOption = errorErrorHandleOption
+type ErrorHandlerFunc = errorHandlerFunc
 
-func (e *ExportErrorHandlerWithoutOutputPortConfig) ErrorHandlerOptions() []errorErrorHandleOption {
-	return e.errorHandlerOptions
+func (e *ErrorHandlerConifg) Handlers() []errorHandlerFunc {
+	return e.handlers
 }
 
-func (e *ExportErrorHandlerWithoutOutputPortConfig) AddErrorHandlerOption(opt errorErrorHandleOption) {
-	e.addErrorHandlerOption(opt)
+func (e *ErrorHandlerConifg) AddHandlers(opt errorHandlerFunc) {
+	e.addHandlers(opt)
 }

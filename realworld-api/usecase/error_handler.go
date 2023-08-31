@@ -16,14 +16,14 @@ type ErrorReporter interface {
 
 type ErrorHandlerOption func(*errorHandlerConfig)
 
-type errorErrorHandleOption func(context.Context, error) (*FailResult, bool)
+type errorHandlerFunc func(context.Context, error) (*FailResult, bool)
 
 type errorHandlerConfig struct {
-	errorHandlerOptions []errorErrorHandleOption
+	handlers []errorHandlerFunc
 }
 
-func (e *errorHandlerConfig) addErrorHandlerOption(opt errorErrorHandleOption) {
-	e.errorHandlerOptions = append(e.errorHandlerOptions, opt)
+func (e *errorHandlerConfig) addHandlers(opt errorHandlerFunc) {
+	e.handlers = append(e.handlers, opt)
 }
 
 type ErrorHandler[R any] interface {
@@ -56,8 +56,8 @@ func (e *errorHandler[R]) Handle(ctx context.Context, err error, opts ...ErrorHa
 		opt(&config)
 	}
 
-	for _, opt := range config.errorHandlerOptions {
-		if result, ok := opt(ctx, err); ok {
+	for _, h := range config.handlers {
+		if result, ok := h(ctx, err); ok {
 			return Fail[R](result)
 		}
 	}
@@ -81,7 +81,7 @@ func (e *errorHandler[R]) Handle(ctx context.Context, err error, opts ...ErrorHa
 
 func WithBadRequestHandler(targets ...error) ErrorHandlerOption {
 	return func(c *errorHandlerConfig) {
-		c.addErrorHandlerOption(func(ctx context.Context, err error) (*FailResult, bool) {
+		c.addHandlers(func(ctx context.Context, err error) (*FailResult, bool) {
 			if includeInErrors(err, targets...) {
 				xlog.Debug(ctx, "render bad request")
 				return newFaileResult(FailTypeBadRequest, err), true
@@ -93,7 +93,7 @@ func WithBadRequestHandler(targets ...error) ErrorHandlerOption {
 
 func WithNotFoundHandler(targets ...error) ErrorHandlerOption {
 	return func(c *errorHandlerConfig) {
-		c.addErrorHandlerOption(func(ctx context.Context, err error) (*FailResult, bool) {
+		c.addHandlers(func(ctx context.Context, err error) (*FailResult, bool) {
 			if includeInErrors(err, targets...) {
 				xlog.Debug(ctx, "render not found")
 				return newFaileResult(FailTypeNotFound, err), true
@@ -105,7 +105,7 @@ func WithNotFoundHandler(targets ...error) ErrorHandlerOption {
 
 func WithUnauthorizedHandler(targets ...error) ErrorHandlerOption {
 	return func(c *errorHandlerConfig) {
-		c.addErrorHandlerOption(func(ctx context.Context, err error) (*FailResult, bool) {
+		c.addHandlers(func(ctx context.Context, err error) (*FailResult, bool) {
 			if includeInErrors(err, targets...) {
 				xlog.Debug(ctx, "render unauthorized")
 				return newFaileResult(FailTypeUnauthorized, err), true

@@ -52,8 +52,8 @@ func Test_ErrorHandler_Handle(t *testing.T) {
 				ctx: context.TODO(),
 				err: dummyError,
 				opts: []ErrorHandlerOption{
-					func(ehc *ExportErrorHandlerWithoutOutputPortConfig) {
-						ehc.AddErrorHandlerOption(func(ctx context.Context, err error) (*FailResult, bool) {
+					func(ehc *ErrorHandlerConifg) {
+						ehc.AddHandlers(func(ctx context.Context, err error) (*FailResult, bool) {
 							return NewFailResult(FailTypeBadRequest, "test_faile_result"), true
 						})
 					},
@@ -72,8 +72,8 @@ func Test_ErrorHandler_Handle(t *testing.T) {
 				ctx: context.TODO(),
 				err: dummyError,
 				opts: []ErrorHandlerOption{
-					func(ehc *ExportErrorHandlerWithoutOutputPortConfig) {
-						ehc.AddErrorHandlerOption(func(ctx context.Context, err error) (*FailResult, bool) {
+					func(ehc *ErrorHandlerConifg) {
+						ehc.AddHandlers(func(ctx context.Context, err error) (*FailResult, bool) {
 							return nil, false
 						})
 					},
@@ -195,10 +195,10 @@ func Test_WithNotFoundHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			opt := WithNotFoundHandler(tt.args.errs...)
-			var config ExportErrorHandlerWithoutOutputPortConfig
+			var config ErrorHandlerConifg
 			opt(&config)
 
-			got, ok := config.ErrorHandlerOptions()[0](tt.calls.ctx, tt.calls.err)
+			got, ok := config.Handlers()[0](tt.calls.ctx, tt.calls.err)
 			assert.Equal(t, tt.wants.result, got, "result")
 			assert.Equal(t, tt.wants.ok, ok, "ok")
 		})
@@ -274,10 +274,10 @@ func Test_WithBadRequestHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			opt := WithBadRequestHandler(tt.args.errs...)
-			var config ExportErrorHandlerWithoutOutputPortConfig
+			var config ErrorHandlerConifg
 			opt(&config)
 
-			got, ok := config.ErrorHandlerOptions()[0](tt.calls.ctx, tt.calls.err)
+			got, ok := config.Handlers()[0](tt.calls.ctx, tt.calls.err)
 			assert.Equal(t, tt.wants.result, got, "result")
 			assert.Equal(t, tt.wants.ok, ok, "ok")
 		})
@@ -353,10 +353,10 @@ func Test_WithUnauthorizedHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			opt := WithUnauthorizedHandler(tt.args.errs...)
-			var config ExportErrorHandlerWithoutOutputPortConfig
+			var config ErrorHandlerConifg
 			opt(&config)
 
-			got, ok := config.ErrorHandlerOptions()[0](tt.calls.ctx, tt.calls.err)
+			got, ok := config.Handlers()[0](tt.calls.ctx, tt.calls.err)
 			assert.Equal(t, tt.wants.result, got, "result")
 			assert.Equal(t, tt.wants.ok, ok, "ok")
 		})
