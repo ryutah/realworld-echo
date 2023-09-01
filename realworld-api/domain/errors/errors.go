@@ -50,7 +50,7 @@ func NewValidationError(depth int, err error) error {
 }
 
 func NewNotFoundError(depth int, err error, msg string) error {
-	return cerrors.WithMessage(
+	return cerrors.WithDetail(
 		cerrors.WithDetailf(
 			cerrors.WrapWithDepth(depth+1, Errors.NotFound.Err, Errors.NotFound.Message),
 			"%+v", err,
@@ -60,10 +60,10 @@ func NewNotFoundError(depth int, err error, msg string) error {
 }
 
 func NewInternalError(depth int, err error, msg string) error {
-	return cerrors.WithMessage(
+	return cerrors.WithDetail(
 		cerrors.WithDetailf(
 			cerrors.WrapWithDepth(depth+1, Errors.Internal.Err, Errors.Internal.Message),
-			"%v: %+v", msg, err,
+			"%+v", err,
 		),
 		msg,
 	)

@@ -348,7 +348,7 @@ func Test_ListArticle_List(t *testing.T) {
 					)
 			}
 
-			a := NewListArticle[any](errorHandler, articleRepository, favoriteRepository, authService)
+			a := NewListArticle(errorHandler, articleRepository, favoriteRepository, authService)
 			got := a.List(context.Background(), tt.args.param)
 			assert.Equal(t, tt.wants.result, got)
 		})

@@ -4,30 +4,69 @@ import (
 	"context"
 
 	"github.com/ryutah/realworld-echo/realworld-api/api/rest/gen"
+	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
+	"github.com/ryutah/realworld-echo/realworld-api/internal/operations"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtrace"
 	"github.com/ryutah/realworld-echo/realworld-api/usecase/article"
+	"github.com/samber/lo"
 )
 
 type Article struct {
 	inputPort struct {
 		getArticle  article.GetArticleInputPort
-		listArticle article.ListArticle[gen.GetArticlesResponseObject]
+		listArticle article.ListArticleInputPort
 	}
 }
 
-func NewArticle(getArticle article.GetArticleInputPort) *Article {
+func NewArticle(getArticle article.GetArticleInputPort, listArticle article.ListArticleInputPort) *Article {
 	return &Article{
 		inputPort: struct {
 			getArticle  article.GetArticleInputPort
-			listArticle article.ListArticle[gen.GetArticlesResponseObject]
+			listArticle article.ListArticleInputPort
 		}{
-			getArticle: getArticle,
+			getArticle:  getArticle,
+			listArticle: listArticle,
 		},
 	}
 }
 
 func (a *Article) GetArticles(ctx context.Context, request gen.GetArticlesRequestObject) (gen.GetArticlesResponseObject, error) {
-	panic("not implemented") // TODO: Implement
+	ctx, finish := operations.StartFunc(ctx)
+	defer finish()
+
+	result := a.inputPort.listArticle.List(ctx, article.ListArticleParam{})
+	if result.IsFailed() {
+		return gen.GetArticles422JSONResponse{
+			GenericErrorJSONResponse: gen.GenericErrorJSONResponse{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{
+					Body: []string{
+						result.Fail().Message,
+					},
+				},
+			},
+		}, nil
+	}
+	return gen.GetArticles200JSONResponse{
+		MultipleArticlesResponseJSONResponse: gen.MultipleArticlesResponseJSONResponse{
+			Articles: lo.Map(result.Success().Articles, func(a article.ListArticleResultArtile, _ int) gen.Article {
+				return gen.Article{
+					Slug:           a.Aritcle.Slug.String(),
+					Author:         gen.Profile{},
+					Title:          a.Aritcle.Contents.Title.String(),
+					Body:           a.Aritcle.Contents.Body.String(),
+					Description:    a.Aritcle.Slug.String(),
+					Favorited:      a.Favorited,
+					FavoritesCount: len(a.Favorites),
+					TagList:        lo.Map(a.Aritcle.Tags, func(t model.TagName, _ int) string { return t.String() }),
+					CreatedAt:      a.Aritcle.CreatedAt.Time(),
+					UpdatedAt:      a.Aritcle.UpdatedAt.Time(),
+				}
+			}),
+			ArticlesCount: len(result.Success().Articles),
+		},
+	}, nil
 }
 
 func (a *Article) GetArticle(ctx context.Context, request gen.GetArticleRequestObject) (gen.GetArticleResponseObject, error) {

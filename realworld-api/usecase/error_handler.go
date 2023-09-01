@@ -63,7 +63,7 @@ func (e *errorHandler[R]) Handle(ctx context.Context, err error, opts ...ErrorHa
 	}
 
 	var uid string
-	if user, err := e.service.auth.CurrentUser(ctx); err != nil {
+	if user, err := e.service.auth.CurrentUser(ctx); err == nil {
 		uid = user.ID.String()
 	}
 	xlog.Debug(ctx, "render internal error")

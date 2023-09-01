@@ -2,12 +2,12 @@ package sqlc_test
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
@@ -196,7 +196,7 @@ func TestArticle_Get(t *testing.T) {
 			mocks: mocks{
 				querier: mock_querier{
 					getArticle_args_slug:     testData1.mocks.querier.getArticle_args_slug,
-					getArticle_returns_error: sql.ErrNoRows,
+					getArticle_returns_error: pgx.ErrNoRows,
 				},
 			},
 			wants: wants{

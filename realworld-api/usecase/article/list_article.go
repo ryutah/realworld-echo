@@ -36,7 +36,7 @@ type (
 	}
 )
 
-type ListArticle[Ret any] struct {
+type ListArticle struct {
 	errorHandler usecase.ErrorHandler[ListArticleResult]
 	repository   struct {
 		article  repository.Article
@@ -47,13 +47,13 @@ type ListArticle[Ret any] struct {
 	}
 }
 
-func NewListArticle[Ret any](
+func NewListArticle(
 	errorHandler usecase.ErrorHandler[ListArticleResult],
 	articleRepo repository.Article,
 	favoriteRepo repository.Favorite,
 	authService service.Auth,
 ) ListArticleInputPort {
-	return &ListArticle[Ret]{
+	return &ListArticle{
 		errorHandler: errorHandler,
 		repository: struct {
 			article  repository.Article
@@ -70,7 +70,7 @@ func NewListArticle[Ret any](
 	}
 }
 
-func (a *ListArticle[Ret]) List(ctx context.Context, param ListArticleParam) *usecase.Result[ListArticleResult] {
+func (a *ListArticle) List(ctx context.Context, param ListArticleParam) *usecase.Result[ListArticleResult] {
 	ctx, finish := operations.StartFunc(ctx)
 	defer finish()
 
@@ -97,7 +97,7 @@ func (a *ListArticle[Ret]) List(ctx context.Context, param ListArticleParam) *us
 	return usecase.Success(a.generateResult(articles, favorites, user))
 }
 
-func (a *ListArticle[Ret]) generateResult(articles model.ArticleSlice, favorites model.FavoriteSliceMap, user *authmodel.User) ListArticleResult {
+func (a *ListArticle) generateResult(articles model.ArticleSlice, favorites model.FavoriteSliceMap, user *authmodel.User) ListArticleResult {
 	artileResults := lo.Map(articles, func(item model.Article, _ int) ListArticleResultArtile {
 		var favorited bool
 		if user != nil {

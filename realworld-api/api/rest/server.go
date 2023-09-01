@@ -18,12 +18,6 @@ func NewServer(article *Article) *Server {
 	}
 }
 
-// Get recent articles globally
-// (GET /articles)
-func (s *Server) GetArticles(ctx context.Context, request gen.GetArticlesRequestObject) (gen.GetArticlesResponseObject, error) {
-	panic("not implemented") // TODO: Implement
-}
-
 // Create an article
 // (POST /articles)
 func (s *Server) CreateArticle(ctx context.Context, request gen.CreateArticleRequestObject) (gen.CreateArticleResponseObject, error) {

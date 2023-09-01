@@ -2,10 +2,10 @@ package sqlc
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/repository"
 	authmodel "github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
@@ -42,7 +42,7 @@ func (a *Article) Get(ctx context.Context, slug model.Slug) (*model.Article, err
 	q := a.manager.Querier(ctx)
 
 	article, err := q.GetArticle(ctx, uuid)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, derrors.NewNotFoundError(0, err, "failed to get article")
 	} else if err != nil {
 		return nil, derrors.NewInternalError(0, err, "failed to get article")

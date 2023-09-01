@@ -21,15 +21,18 @@ type DBManager interface {
 	BeginTx(context.Context, pgx.TxOptions) (pgx.Tx, error)
 }
 
+type DBConfig struct {
+	ConnectionName string
+}
+
 type dbManager struct {
 	dbpool *pgxpool.Pool
 }
 
 var _ DBManager = (*dbManager)(nil)
 
-func NewDBManager(lc fx.Lifecycle) (*dbManager, error) {
-	// TODO
-	config, err := pgxpool.ParseConfig("")
+func NewDBManager(conf DBConfig, lc fx.Lifecycle) (*dbManager, error) {
+	config, err := pgxpool.ParseConfig(conf.ConnectionName)
 	if err != nil {
 		return nil, err
 	}
