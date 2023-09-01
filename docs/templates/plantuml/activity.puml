@@ -1,0 +1,35 @@
+@startuml
+
+' see: https://plantuml.com/ja-dark/activity-diagram-beta
+' 不明なエラー発生時の Internal Error はアプリケーションロジックとは直接関係ない者であるため省略して記載する
+
+title タスク起票
+
+start
+
+#cyan:ユーザ認可リクエスト共通処理;
+:Task エンティティ新規作成;
+
+if (入力エラー) then (yes)
+  :BadRequest レスポンス;
+  stop
+else (no)
+  :Task エンティティ保存;
+  note right
+    * Database
+      * Task
+    ====
+    * DB への登録、ファイルへの出力は note で記述
+    * メモが必要な場合は `====` で区切って下部に記載
+  end note
+endif
+
+if (Task 重複エラー) then (yes)
+  :BadRequest レスポンス;
+else (no)
+  :Task 起票成功レスポンス;
+endif
+
+stop
+
+@enduml

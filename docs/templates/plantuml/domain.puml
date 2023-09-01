@@ -1,0 +1,50 @@
+@startuml
+
+' see: https://plantuml.com/ja-dark/class-diagram
+
+skinparam class {
+  BackgroundColor<<RootEntity>> pink
+  BackgroundColor<<Entity>> orange
+  BackgroundColor<<VO>> palegreen
+  BackgroundColor<<Service>> cyan
+}
+hide circle
+hide empty members
+
+' 境界付けられたコンテキストを定義する場合は namespace を使用する
+namespace bounded_context {
+  class ルートエンティティ[RootEntity]<<RootEntity>> {
+    ' エンティティのキーとなるフィールドには [pk] を付与
+    ' 複合キーの場合複数のフィールドに [pk] を付与
+    id[pk]
+    ' 日本語表記[英語表記]
+    ' id 等の名称が明確な場合は省略可
+    name[名前]
+  }
+  class Entity<<Entity>> {
+    id[pk]
+    名前 : name
+  }
+  class ValueObject<<VO>> {
+    値 : value
+  }
+  RootEntity "1" -- "1" Entity
+  RootEntity "1" -- "1" ValueObject
+
+  class RootEntity2<<RootEntity>> {
+    id[pk]
+    value : 値
+  }
+  ' ID等による緩い関連は "--> : 関連フィールド" の表記で表現
+  RootEntity2 --> RootEntity : id
+
+  class Service<<Service>> {
+    ' 関数名(引数) : 戻り値
+    method(RootEntity, RootEntity2) : void
+  }
+  ' サービスが利用するエンティティを表す
+  Service ..> RootEntity : use
+  Service ..> RootEntity2 : use
+}
+
+@enduml
