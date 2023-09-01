@@ -33,6 +33,7 @@ generate/mock: ## run mock generate
 
 .PHONY: generate/sqlc
 generate/sqlc: ## generate sqlc code
+	rm -rf ./infrastructure/psql/sqlc/gen
 	sqlc generate
 
 .PHONY: generate/domain_diagram

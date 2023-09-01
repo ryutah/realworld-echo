@@ -24,6 +24,145 @@ func (_m *MockQuerier) EXPECT() *MockQuerier_Expecter {
 	return &MockQuerier_Expecter{mock: &_m.Mock}
 }
 
+// CreateArticleTag provides a mock function with given fields: ctx, arg
+func (_m *MockQuerier) CreateArticleTag(ctx context.Context, arg []gen.CreateArticleTagParams) (int64, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []gen.CreateArticleTagParams) (int64, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []gen.CreateArticleTagParams) int64); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []gen.CreateArticleTagParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockQuerier_CreateArticleTag_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateArticleTag'
+type MockQuerier_CreateArticleTag_Call struct {
+	*mock.Call
+}
+
+// CreateArticleTag is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg []gen.CreateArticleTagParams
+func (_e *MockQuerier_Expecter) CreateArticleTag(ctx interface{}, arg interface{}) *MockQuerier_CreateArticleTag_Call {
+	return &MockQuerier_CreateArticleTag_Call{Call: _e.mock.On("CreateArticleTag", ctx, arg)}
+}
+
+func (_c *MockQuerier_CreateArticleTag_Call) Run(run func(ctx context.Context, arg []gen.CreateArticleTagParams)) *MockQuerier_CreateArticleTag_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]gen.CreateArticleTagParams))
+	})
+	return _c
+}
+
+func (_c *MockQuerier_CreateArticleTag_Call) Return(_a0 int64, _a1 error) *MockQuerier_CreateArticleTag_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockQuerier_CreateArticleTag_Call) RunAndReturn(run func(context.Context, []gen.CreateArticleTagParams) (int64, error)) *MockQuerier_CreateArticleTag_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CreateOrDoNothingTag provides a mock function with given fields: ctx, arg
+func (_m *MockQuerier) CreateOrDoNothingTag(ctx context.Context, arg gen.CreateOrDoNothingTagParams) error {
+	ret := _m.Called(ctx, arg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gen.CreateOrDoNothingTagParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockQuerier_CreateOrDoNothingTag_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateOrDoNothingTag'
+type MockQuerier_CreateOrDoNothingTag_Call struct {
+	*mock.Call
+}
+
+// CreateOrDoNothingTag is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gen.CreateOrDoNothingTagParams
+func (_e *MockQuerier_Expecter) CreateOrDoNothingTag(ctx interface{}, arg interface{}) *MockQuerier_CreateOrDoNothingTag_Call {
+	return &MockQuerier_CreateOrDoNothingTag_Call{Call: _e.mock.On("CreateOrDoNothingTag", ctx, arg)}
+}
+
+func (_c *MockQuerier_CreateOrDoNothingTag_Call) Run(run func(ctx context.Context, arg gen.CreateOrDoNothingTagParams)) *MockQuerier_CreateOrDoNothingTag_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gen.CreateOrDoNothingTagParams))
+	})
+	return _c
+}
+
+func (_c *MockQuerier_CreateOrDoNothingTag_Call) Return(_a0 error) *MockQuerier_CreateOrDoNothingTag_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockQuerier_CreateOrDoNothingTag_Call) RunAndReturn(run func(context.Context, gen.CreateOrDoNothingTagParams) error) *MockQuerier_CreateOrDoNothingTag_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeleteArticleTagBySlug provides a mock function with given fields: ctx, articleSlug
+func (_m *MockQuerier) DeleteArticleTagBySlug(ctx context.Context, articleSlug uuid.UUID) error {
+	ret := _m.Called(ctx, articleSlug)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) error); ok {
+		r0 = rf(ctx, articleSlug)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockQuerier_DeleteArticleTagBySlug_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteArticleTagBySlug'
+type MockQuerier_DeleteArticleTagBySlug_Call struct {
+	*mock.Call
+}
+
+// DeleteArticleTagBySlug is a helper method to define mock.On call
+//   - ctx context.Context
+//   - articleSlug uuid.UUID
+func (_e *MockQuerier_Expecter) DeleteArticleTagBySlug(ctx interface{}, articleSlug interface{}) *MockQuerier_DeleteArticleTagBySlug_Call {
+	return &MockQuerier_DeleteArticleTagBySlug_Call{Call: _e.mock.On("DeleteArticleTagBySlug", ctx, articleSlug)}
+}
+
+func (_c *MockQuerier_DeleteArticleTagBySlug_Call) Run(run func(ctx context.Context, articleSlug uuid.UUID)) *MockQuerier_DeleteArticleTagBySlug_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *MockQuerier_DeleteArticleTagBySlug_Call) Return(_a0 error) *MockQuerier_DeleteArticleTagBySlug_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockQuerier_DeleteArticleTagBySlug_Call) RunAndReturn(run func(context.Context, uuid.UUID) error) *MockQuerier_DeleteArticleTagBySlug_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetArticle provides a mock function with given fields: ctx, slug
 func (_m *MockQuerier) GetArticle(ctx context.Context, slug uuid.UUID) (gen.Article, error) {
 	ret := _m.Called(ctx, slug)

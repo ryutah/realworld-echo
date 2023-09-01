@@ -21,6 +21,10 @@ func NewTagName(name string) (TagName, error) {
 	return tagName, nil
 }
 
+func (t TagName) String() string {
+	return premitive.ShortText(t).String()
+}
+
 type Tag struct {
 	Tag       TagName `validate:"required"`
 	CreatedAt premitive.JSTTime

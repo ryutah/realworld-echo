@@ -7,9 +7,9 @@ package gen
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const GetArticle = `-- name: GetArticle :one
@@ -24,7 +24,7 @@ limit
 `
 
 func (q *Queries) GetArticle(ctx context.Context, slug uuid.UUID) (Article, error) {
-	row := q.db.QueryRowContext(ctx, GetArticle, slug)
+	row := q.db.QueryRow(ctx, GetArticle, slug)
 	var i Article
 	err := row.Scan(
 		&i.Slug,
@@ -62,17 +62,17 @@ set
 `
 
 type UpsertArticleParams struct {
-	Slug        uuid.UUID `db:"slug"`
-	Author      string    `db:"author"`
-	Body        string    `db:"body"`
-	Title       string    `db:"title"`
-	Description string    `db:"description"`
-	CreatedAt   time.Time `db:"created_at"`
-	UpdatedAt   time.Time `db:"updated_at"`
+	Slug        uuid.UUID          `db:"slug"`
+	Author      string             `db:"author"`
+	Body        string             `db:"body"`
+	Title       string             `db:"title"`
+	Description string             `db:"description"`
+	CreatedAt   pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `db:"updated_at"`
 }
 
 func (q *Queries) UpsertArticle(ctx context.Context, arg UpsertArticleParams) error {
-	_, err := q.db.ExecContext(ctx, UpsertArticle,
+	_, err := q.db.Exec(ctx, UpsertArticle,
 		arg.Slug,
 		arg.Author,
 		arg.Body,

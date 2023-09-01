@@ -53,37 +53,70 @@ func Test_GetArticle_Get(t *testing.T) {
 		auth_currentUser_should_skip    bool
 	}
 	type args struct {
-		ctx     context.Context
 		slugStr string
 	}
 
 	var (
-		now        = premitive.NewJSTTime(time.Now())
-		dummyError = errors.New("dummy")
-		article1   = model.Article{
-			Slug: "id",
-			Contents: model.ArticleContents{
-				Title:       "title",
-				Description: "desc",
-				Body:        "body",
+		now                         = premitive.NewJSTTime(time.Now())
+		dummyError                  = errors.New("dummy")
+		slug1      model.Slug       = "slug"
+		user1      authmodel.UserID = "user1"
+		user2      authmodel.UserID = "user2"
+		failResult                  = usecase.Fail[GetArticleResult](usecase.NewFailResult(usecase.FailTypeInternalError, "error"))
+		testData1                   = struct {
+			args  args
+			mocks mocks
+			wants *usecase.Result[GetArticleResult]
+		}{
+			args: args{
+				slugStr: slug1.String(),
 			},
-			Author:    "Author",
-			CreatedAt: now,
-			UpdatedAt: now,
+			mocks: mocks{
+				articleRepository: mocks_articleRepository{
+					get_args_slugStr: slug1,
+					get_returns_article: &model.Article{
+						Slug: slug1,
+						Contents: model.ArticleContents{
+							Title:       "title",
+							Description: "desc",
+							Body:        "body",
+						},
+						Author:    "Author",
+						CreatedAt: now,
+						UpdatedAt: now,
+					},
+					get_returns_error: nil,
+				},
+				favoriteRepository: mocks_favoriteRepository{
+					listBySlug_args_slug: slug1,
+					listBySlug_returns_favorites: model.FavoriteSlice{
+						{ArticleSlug: slug1, UserID: user1},
+						{ArticleSlug: slug1, UserID: user2},
+					},
+				},
+				authService: mocks_authService{
+					currentUser_returns_user: &authmodel.User{ID: user1},
+				},
+			},
+			wants: usecase.Success(GetArticleResult{
+				Article: model.Article{
+					Slug: slug1,
+					Contents: model.ArticleContents{
+						Title:       "title",
+						Description: "desc",
+						Body:        "body",
+					},
+					Author:    "Author",
+					CreatedAt: now,
+					UpdatedAt: now,
+				},
+				Favorited: true,
+				Favorites: model.FavoriteSlice{
+					{ArticleSlug: slug1, UserID: user1},
+					{ArticleSlug: slug1, UserID: user2},
+				},
+			}),
 		}
-		user1          authmodel.UserID = "user1"
-		user2          authmodel.UserID = "user2"
-		favoriteSlice1                  = model.FavoriteSlice{
-			{
-				ArticleSlug: article1.Slug,
-				UserID:      user1,
-			},
-			{
-				ArticleSlug: article1.Slug,
-				UserID:      user2,
-			},
-		}
-		failResult = usecase.Fail[GetArticleResult](usecase.NewFailResult(usecase.FailTypeInternalError, "error"))
 	)
 
 	tests := []struct {
@@ -94,63 +127,30 @@ func Test_GetArticle_Get(t *testing.T) {
 		wants   *usecase.Result[GetArticleResult]
 	}{
 		{
-			name: "when_given_any_slug_should_call_ArticleRepository_Get_and_GetArticleOutputPort_Success_and_return_nil",
-			args: args{
-				ctx:     context.TODO(),
-				slugStr: "slug",
-			},
-			mocks: mocks{
-				articleRepository: mocks_articleRepository{
-					get_args_slugStr:    "slug",
-					get_returns_article: &article1,
-					get_returns_error:   nil,
-				},
-				favoriteRepository: mocks_favoriteRepository{
-					listBySlug_args_slug:         article1.Slug,
-					listBySlug_returns_favorites: favoriteSlice1,
-					listBySlug_returns_error:     nil,
-				},
-				authService: mocks_authService{
-					currentUser_returns_user: &authmodel.User{ID: user1},
-				},
-			},
-			wants: usecase.Success(GetArticleResult{
-				Article:   article1,
-				Favorited: true,
-				Favorites: favoriteSlice1,
-			}),
+			name:  "when_given_any_slug_should_call_ArticleRepository_Get_and_GetArticleOutputPort_Success_and_return_nil",
+			args:  testData1.args,
+			mocks: testData1.mocks,
+			wants: testData1.wants,
 		},
 		{
 			name: "when_given_any_slug_without_signedin_should_call_ArticleRepository_Get_and_GetArticleOutputPort_Success_and_return_nil",
-			args: args{
-				ctx:     context.TODO(),
-				slugStr: "slug",
-			},
+			args: testData1.args,
 			mocks: mocks{
-				articleRepository: mocks_articleRepository{
-					get_args_slugStr:    "slug",
-					get_returns_article: &article1,
-					get_returns_error:   nil,
-				},
-				favoriteRepository: mocks_favoriteRepository{
-					listBySlug_args_slug:         article1.Slug,
-					listBySlug_returns_favorites: favoriteSlice1,
-					listBySlug_returns_error:     nil,
-				},
+				articleRepository:  testData1.mocks.articleRepository,
+				favoriteRepository: testData1.mocks.favoriteRepository,
 				authService: mocks_authService{
 					currentUser_returns_error: derrors.Errors.NotAuthorized.Err,
 				},
 			},
 			wants: usecase.Success(GetArticleResult{
-				Article:   article1,
+				Article:   testData1.wants.Success().Article,
 				Favorited: false,
-				Favorites: favoriteSlice1,
+				Favorites: testData1.wants.Success().Favorites,
 			}),
 		},
 		{
 			name: "when_given_not_exists_slug_should_call_ArticleRepositroy_Get_with_return_error_and_call_ErrorHandler_Handle_and_return_nil",
 			args: args{
-				ctx:     context.TODO(),
 				slugStr: "notexists",
 			},
 			mocks: mocks{
@@ -175,7 +175,6 @@ func Test_GetArticle_Get(t *testing.T) {
 		{
 			name: "when_given_invalid_slug_should_call_ErrorHandler_and_return_nil",
 			args: args{
-				ctx:     context.TODO(),
 				slugStr: strings.Repeat("a", 256),
 			},
 			mocks: mocks{
@@ -195,23 +194,16 @@ func Test_GetArticle_Get(t *testing.T) {
 		},
 		{
 			name: "when_favorite_listBySlug_return_error_should_call_ErrorHandler_and_return_fail_result",
-			args: args{
-				ctx:     context.TODO(),
-				slugStr: "slug",
-			},
+			args: testData1.args,
 			mocks: mocks{
 				errorHandler: mocks_errorHandler{
 					handle_args_error:       dummyError,
 					handle_args_opts_length: 0,
 					handle_returns_result:   failResult,
 				},
-				articleRepository: mocks_articleRepository{
-					get_args_slugStr:    "slug",
-					get_returns_article: &article1,
-					get_returns_error:   nil,
-				},
+				articleRepository: testData1.mocks.articleRepository,
 				favoriteRepository: mocks_favoriteRepository{
-					listBySlug_args_slug:     article1.Slug,
+					listBySlug_args_slug:     testData1.mocks.favoriteRepository.listBySlug_args_slug,
 					listBySlug_returns_error: dummyError,
 				},
 			},
@@ -223,25 +215,15 @@ func Test_GetArticle_Get(t *testing.T) {
 		},
 		{
 			name: "when_authService_currentUser_return_unknown_error_should_call_ErrorHandler_and_return_fail_result",
-			args: args{
-				ctx:     context.TODO(),
-				slugStr: "slug",
-			},
+			args: testData1.args,
 			mocks: mocks{
 				errorHandler: mocks_errorHandler{
 					handle_args_error:       dummyError,
 					handle_args_opts_length: 0,
 					handle_returns_result:   failResult,
 				},
-				articleRepository: mocks_articleRepository{
-					get_args_slugStr:    "slug",
-					get_returns_article: &article1,
-					get_returns_error:   nil,
-				},
-				favoriteRepository: mocks_favoriteRepository{
-					listBySlug_args_slug:         article1.Slug,
-					listBySlug_returns_favorites: favoriteSlice1,
-				},
+				articleRepository:  testData1.mocks.articleRepository,
+				favoriteRepository: testData1.mocks.favoriteRepository,
 				authService: mocks_authService{
 					currentUser_returns_error: dummyError,
 				},
@@ -260,33 +242,32 @@ func Test_GetArticle_Get(t *testing.T) {
 			authService := mock_auth_service.NewMockAuth(t)
 
 			if tt.configs.errorHandler_handle_should_call {
-				errorHandler.EXPECT().Handle(
-					mock.Anything, mock.Anything, mock.Anything,
-				).Run(
-					func(ctx context.Context, err error, opts ...usecase.ErrorHandlerOption) {
-						assert.ErrorIs(t, err, tt.mocks.errorHandler.handle_args_error, "error of ErrorHandler#Handle args")
-						assert.Len(t, opts, tt.mocks.errorHandler.handle_args_opts_length, "length of ErrorHandler#Hanel option args")
-					},
-				).Return(
-					tt.mocks.errorHandler.handle_returns_result,
-				)
+				errorHandlerExpectations(t, errorHandler, errorHandlerExpectationsOption[GetArticleResult]{
+					HandleArgsError:      tt.mocks.errorHandler.handle_args_error,
+					HandleArgsOptsLength: tt.mocks.errorHandler.handle_args_opts_length,
+					HandleReturnsResult:  tt.mocks.errorHandler.handle_returns_result,
+				})
 			}
 			if !tt.configs.article_get_should_skip {
-				article.EXPECT().Get(
-					mock.Anything, tt.mocks.articleRepository.get_args_slugStr,
-				).Return(
-					tt.mocks.articleRepository.get_returns_article,
-					tt.mocks.articleRepository.get_returns_error,
-				)
+				article.EXPECT().
+					Get(
+						mock.Anything, tt.mocks.articleRepository.get_args_slugStr,
+					).
+					Return(
+						tt.mocks.articleRepository.get_returns_article,
+						tt.mocks.articleRepository.get_returns_error,
+					)
 			}
 			if !tt.configs.favorite_listBySlug_should_skip {
-				favorite.EXPECT().ListBySlug(
-					mock.Anything,
-					tt.mocks.favoriteRepository.listBySlug_args_slug,
-				).Return(
-					tt.mocks.favoriteRepository.listBySlug_returns_favorites,
-					tt.mocks.favoriteRepository.listBySlug_returns_error,
-				)
+				favorite.EXPECT().
+					ListBySlug(
+						mock.Anything,
+						tt.mocks.favoriteRepository.listBySlug_args_slug,
+					).
+					Return(
+						tt.mocks.favoriteRepository.listBySlug_returns_favorites,
+						tt.mocks.favoriteRepository.listBySlug_returns_error,
+					)
 			}
 			if !tt.configs.auth_currentUser_should_skip {
 				authService.EXPECT().
@@ -298,7 +279,7 @@ func Test_GetArticle_Get(t *testing.T) {
 			}
 
 			a := NewGetArticle(errorHandler, article, favorite, authService)
-			result := a.Get(tt.args.ctx, tt.args.slugStr)
+			result := a.Get(context.Background(), tt.args.slugStr)
 			assert.Equal(t, tt.wants, result)
 		})
 	}

@@ -6,9 +6,9 @@ package gen
 
 import (
 	"database/sql"
-	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // 記事
@@ -22,9 +22,9 @@ type Article struct {
 	// 記事タイトル
 	Title string `db:"title"`
 	// 記事詳細情報
-	Description string    `db:"description"`
-	CreatedAt   time.Time `db:"created_at"`
-	UpdatedAt   time.Time `db:"updated_at"`
+	Description string             `db:"description"`
+	CreatedAt   pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `db:"updated_at"`
 }
 
 // 記事コメント
@@ -36,9 +36,9 @@ type ArticleComment struct {
 	// 投稿者
 	Author string `db:"author"`
 	// コメント内容
-	Body      string    `db:"body"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	Body      string             `db:"body"`
+	CreatedAt pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at"`
 }
 
 // 記事フォロー
@@ -46,9 +46,9 @@ type ArticleFavorite struct {
 	// 記事slug
 	ArticleSlug uuid.UUID `db:"article_slug"`
 	// ユーザID
-	UserID    string    `db:"user_id"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	UserID    string             `db:"user_id"`
+	CreatedAt pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at"`
 }
 
 // タグ情報
@@ -56,9 +56,9 @@ type ArticleTag struct {
 	// 記事slug
 	ArticleSlug uuid.UUID `db:"article_slug"`
 	// タグ名
-	TagName   string    `db:"tag_name"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	TagName   string             `db:"tag_name"`
+	CreatedAt pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at"`
 }
 
 // ユーザ情報
@@ -66,15 +66,15 @@ type Profile struct {
 	// ユーザID
 	UserID uuid.UUID `db:"user_id"`
 	// 自己紹介
-	Bio       sql.NullString `db:"bio"`
-	CreatedAt time.Time      `db:"created_at"`
-	UpdatedAt time.Time      `db:"updated_at"`
+	Bio       sql.NullString     `db:"bio"`
+	CreatedAt pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at"`
 }
 
 // タグ
 type Tag struct {
 	// タグ名
-	Name      string    `db:"name"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	Name      string             `db:"name"`
+	CreatedAt pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at"`
 }

@@ -269,14 +269,16 @@ func TestCreateArticle_Create(t *testing.T) {
 			},
 		},
 		{
-			name: "when_artileRepository_save_return_unknown_error_should_call_errorHandler_handler_and_return_internal_fail_result",
+			name: "when_tagRepository_bulkSave_return_unknown_error_should_call_errorHandler_handler_and_return_internal_fail_result",
 			args: testData1.args,
 			mocks: mocks{
 				authService: testData1.mocks.authService,
 				articleRepository: mock_articleRepository{
 					generateID_returns_slug: testData1.mocks.articleRepository.generateID_returns_slug,
-					save_args_article:       testData1.mocks.articleRepository.save_args_article,
-					save_returns_error:      dummyError,
+				},
+				tagRepository: mock_tagRepository{
+					bulkSave_args_tags:     testData1.mocks.tagRepository.bulkSave_args_tags,
+					bulkSave_returns_error: dummyError,
 				},
 				errorHandler: mock_errorHandler{
 					handle_args_error:       dummyError,
@@ -289,19 +291,20 @@ func TestCreateArticle_Create(t *testing.T) {
 				nowFunc: nowFunc,
 			},
 			configs: configs{
-				tag_bulkSave_should_be_skipped:  true,
+				article_save_should_be_skipped:  true,
 				errorHandler_handle_should_call: true,
 			},
 		},
 		{
-			name: "when_tagRepository_bulkSave_return_unknown_error_should_call_errorHandler_handler_and_return_internal_fail_result",
+			name: "when_artileRepository_save_return_unknown_error_should_call_errorHandler_handler_and_return_internal_fail_result",
 			args: testData1.args,
 			mocks: mocks{
-				authService:       testData1.mocks.authService,
-				articleRepository: testData1.mocks.articleRepository,
-				tagRepository: mock_tagRepository{
-					bulkSave_args_tags:     testData1.mocks.tagRepository.bulkSave_args_tags,
-					bulkSave_returns_error: dummyError,
+				authService:   testData1.mocks.authService,
+				tagRepository: testData1.mocks.tagRepository,
+				articleRepository: mock_articleRepository{
+					generateID_returns_slug: testData1.mocks.articleRepository.generateID_returns_slug,
+					save_args_article:       testData1.mocks.articleRepository.save_args_article,
+					save_returns_error:      dummyError,
 				},
 				errorHandler: mock_errorHandler{
 					handle_args_error:       dummyError,

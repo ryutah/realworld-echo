@@ -84,10 +84,10 @@ func (c *CreateArticle) Create(ctx context.Context, param CreateArticleParam) *u
 	}
 
 	if err := c.transaction.Run(ctx, func(tc context.Context) error {
-		if err := c.repository.article.Save(tc, *newArticle); err != nil {
+		if err := c.repository.tag.BulkSave(ctx, tags); err != nil {
 			return err
 		}
-		return c.repository.tag.BulkSave(ctx, tags)
+		return c.repository.article.Save(tc, *newArticle)
 	}); err != nil {
 		return c.errorHandler.Handle(ctx, err)
 	}

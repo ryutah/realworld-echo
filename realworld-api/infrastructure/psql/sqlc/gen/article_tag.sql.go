@@ -7,11 +7,28 @@ package gen
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type CreateArticleTagParams struct {
+	ArticleSlug uuid.UUID          `db:"article_slug"`
+	TagName     string             `db:"tag_name"`
+	CreatedAt   pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `db:"updated_at"`
+}
+
+const DeleteArticleTagBySlug = `-- name: DeleteArticleTagBySlug :exec
+delete from article_tag
+where
+    article_slug = $1
+`
+
+func (q *Queries) DeleteArticleTagBySlug(ctx context.Context, articleSlug uuid.UUID) error {
+	_, err := q.db.Exec(ctx, DeleteArticleTagBySlug, articleSlug)
+	return err
+}
 
 const ListArticleTags = `-- name: ListArticleTags :many
 select
@@ -27,14 +44,14 @@ where
 `
 
 type ListArticleTagsRow struct {
-	ArticleSlug uuid.UUID `db:"article_slug"`
-	Name        string    `db:"name"`
-	CreatedAt   time.Time `db:"created_at"`
-	UpdatedAt   time.Time `db:"updated_at"`
+	ArticleSlug uuid.UUID          `db:"article_slug"`
+	Name        string             `db:"name"`
+	CreatedAt   pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `db:"updated_at"`
 }
 
 func (q *Queries) ListArticleTags(ctx context.Context, slugs []string) ([]ListArticleTagsRow, error) {
-	rows, err := q.db.QueryContext(ctx, ListArticleTags, pq.Array(slugs))
+	rows, err := q.db.Query(ctx, ListArticleTags, slugs)
 	if err != nil {
 		return nil, err
 	}
@@ -51,9 +68,6 @@ func (q *Queries) ListArticleTags(ctx context.Context, slugs []string) ([]ListAr
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

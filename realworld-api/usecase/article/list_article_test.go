@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/repository"
 	authmodel "github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
@@ -23,7 +24,6 @@ import (
 
 func Test_ListArticle_List(t *testing.T) {
 	type args struct {
-		ctx   context.Context
 		param ListArticleParam
 	}
 	type mocks_errorHandler struct {
@@ -64,8 +64,6 @@ func Test_ListArticle_List(t *testing.T) {
 
 	var (
 		tag, tErr                                           = model.NewTagName("tag")
-		authID           authmodel.UserID                   = "author"
-		favoritedBy      authmodel.UserID                   = "favorited_by"
 		dummyError                                          = errors.New("dummy")
 		badrequestResult *usecase.Result[ListArticleResult] = usecase.Fail[ListArticleResult](
 			usecase.NewFailResult(usecase.FailTypeBadRequest, "fail"),
@@ -73,6 +71,79 @@ func Test_ListArticle_List(t *testing.T) {
 		internalErrorResult *usecase.Result[ListArticleResult] = usecase.Fail[ListArticleResult](
 			usecase.NewFailResult(usecase.FailTypeInternalError, "fail"),
 		)
+		slug1, _    = model.NewSlug(uuid.New().String())
+		slug2, _    = model.NewSlug(uuid.New().String())
+		user1       = authmodel.UserID("user1")
+		user2       = authmodel.UserID("user2")
+		favoritedBy = authmodel.UserID("user2")
+		testData1   = struct {
+			args  args
+			mocks mocks
+			wants wants
+		}{
+			args: args{
+				param: ListArticleParam{
+					Tag:         "tag",
+					Author:      user1.String(),
+					FavoritedBy: favoritedBy.String(),
+					Offset:      10,
+					Limit:       20,
+				},
+			},
+			mocks: mocks{
+				articleRepository: mocks_articleRepository{
+					search_args_articleSearchParam: repository.ArticleSearchParam{
+						Tag:         &tag,
+						Author:      &user1,
+						FavoritedBy: &favoritedBy,
+						Offset:      10,
+						Limit:       20,
+					},
+					search_retunrs_articles: []model.Article{
+						{Slug: slug1, Author: user1},
+						{Slug: slug2, Author: user2},
+					},
+				},
+				favoriteRepository: mocks_favoriteRepository{
+					listBySlugs_args_slugs: []model.Slug{
+						slug1, slug2,
+					},
+					listBySlugs_returns_favorites: model.FavoriteSliceMap{
+						slug1: model.FavoriteSlice{
+							{ArticleSlug: slug1, UserID: user1},
+							{ArticleSlug: slug2, UserID: user2},
+						},
+						slug2: model.FavoriteSlice{
+							{ArticleSlug: slug2, UserID: user2},
+						},
+					},
+				},
+				authService: mocks_authService{
+					currentUser_returns_user: &authmodel.User{ID: user1},
+				},
+			},
+			wants: wants{
+				result: usecase.Success[ListArticleResult](ListArticleResult{
+					Articles: []ListArticleResultArtile{
+						{
+							Aritcle: model.Article{Slug: slug1, Author: user1},
+							Favorites: model.FavoriteSlice{
+								{ArticleSlug: slug1, UserID: user1},
+								{ArticleSlug: slug2, UserID: user2},
+							},
+							Favorited: true,
+						},
+						{
+							Aritcle: model.Article{Slug: slug2, Author: user2},
+							Favorites: model.FavoriteSlice{
+								{ArticleSlug: slug2, UserID: user2},
+							},
+							Favorited: false,
+						},
+					},
+				}),
+			},
+		}
 	)
 	if tErr != nil {
 		t.Fatal(tErr)
@@ -86,169 +157,51 @@ func Test_ListArticle_List(t *testing.T) {
 		configs configs
 	}{
 		{
-			name: "valid_params_should_returns_expected_result",
-			args: args{
-				ctx: context.TODO(),
-				param: ListArticleParam{
-					Tag:         "tag",
-					Author:      "author",
-					FavoritedBy: "favorited_by",
-					Offset:      10,
-					Limit:       20,
-				},
-			},
-			mocks: mocks{
-				articleRepository: mocks_articleRepository{
-					search_args_articleSearchParam: repository.ArticleSearchParam{
-						Tag:         &tag,
-						Author:      &authID,
-						FavoritedBy: &favoritedBy,
-						Offset:      10,
-						Limit:       20,
-					},
-					search_retunrs_articles: []model.Article{
-						{Slug: "dummy"},
-						{Slug: "dummy2"},
-					},
-				},
-				favoriteRepository: mocks_favoriteRepository{
-					listBySlugs_args_slugs: []model.Slug{
-						"dummy", "dummy2",
-					},
-					listBySlugs_returns_favorites: model.FavoriteSliceMap{
-						"dummy": model.FavoriteSlice{
-							{ArticleSlug: "dummy", UserID: "user1"},
-							{ArticleSlug: "dummy", UserID: "user2"},
-						},
-						"dummy2": model.FavoriteSlice{
-							{ArticleSlug: "dummy2", UserID: "user2"},
-						},
-					},
-				},
-				authService: mocks_authService{
-					currentUser_returns_user: &authmodel.User{ID: "user1"},
-				},
-			},
-			wants: wants{
-				result: usecase.Success[ListArticleResult](ListArticleResult{
-					Articles: []ListArticleResultArtile{
-						{
-							Aritcle: model.Article{Slug: "dummy"},
-							Favorites: model.FavoriteSlice{
-								{ArticleSlug: "dummy", UserID: "user1"},
-								{ArticleSlug: "dummy", UserID: "user2"},
-							},
-							Favorited: true,
-						},
-						{
-							Aritcle: model.Article{Slug: "dummy2"},
-							Favorites: model.FavoriteSlice{
-								{ArticleSlug: "dummy2", UserID: "user2"},
-							},
-							Favorited: false,
-						},
-					},
-				}),
-			},
+			name:    "valid_params_should_returns_expected_result",
+			args:    testData1.args,
+			mocks:   testData1.mocks,
+			wants:   testData1.wants,
 			configs: configs{},
 		},
 		{
 			name: "not_authorized_user_valid_params_should_returns_expected_result",
-			args: args{
-				ctx: context.TODO(),
-				param: ListArticleParam{
-					Tag:         "tag",
-					Author:      "author",
-					FavoritedBy: "favorited_by",
-					Offset:      10,
-					Limit:       20,
-				},
-			},
+			args: testData1.args,
 			mocks: mocks{
-				articleRepository: mocks_articleRepository{
-					search_args_articleSearchParam: repository.ArticleSearchParam{
-						Tag:         &tag,
-						Author:      &authID,
-						FavoritedBy: &favoritedBy,
-						Offset:      10,
-						Limit:       20,
-					},
-					search_retunrs_articles: []model.Article{
-						{Slug: "dummy"},
-						{Slug: "dummy2"},
-					},
-				},
-				favoriteRepository: mocks_favoriteRepository{
-					listBySlugs_args_slugs: []model.Slug{
-						"dummy", "dummy2",
-					},
-					listBySlugs_returns_favorites: model.FavoriteSliceMap{
-						"dummy": model.FavoriteSlice{
-							{ArticleSlug: "dummy", UserID: "user1"},
-							{ArticleSlug: "dummy", UserID: "user2"},
-						},
-						"dummy2": model.FavoriteSlice{
-							{ArticleSlug: "dummy2", UserID: "user2"},
-						},
-					},
-				},
+				articleRepository:  testData1.mocks.articleRepository,
+				favoriteRepository: testData1.mocks.favoriteRepository,
 				authService: mocks_authService{
 					currentUser_returns_err: derrors.Errors.NotAuthorized.Err,
 				},
 			},
 			wants: wants{
 				result: usecase.Success[ListArticleResult](ListArticleResult{
-					Articles: []ListArticleResultArtile{
-						{
-							Aritcle: model.Article{Slug: "dummy"},
-							Favorites: model.FavoriteSlice{
-								{ArticleSlug: "dummy", UserID: "user1"},
-								{ArticleSlug: "dummy", UserID: "user2"},
-							},
-							Favorited: false,
+					Articles: lo.Map(
+						testData1.wants.result.Success().Articles,
+						func(a ListArticleResultArtile, _ int) ListArticleResultArtile {
+							return ListArticleResultArtile{
+								Aritcle:   a.Aritcle,
+								Favorites: a.Favorites,
+								Favorited: false,
+							}
 						},
-						{
-							Aritcle: model.Article{Slug: "dummy2"},
-							Favorites: model.FavoriteSlice{
-								{ArticleSlug: "dummy2", UserID: "user2"},
-							},
-							Favorited: false,
-						},
-					},
+					),
 				}),
 			},
 			configs: configs{},
 		},
 		{
 			name: "valid_params_with_zero_result_should_returns_expected_result",
-			args: args{
-				ctx: context.TODO(),
-				param: ListArticleParam{
-					Tag:         "tag",
-					Author:      "author",
-					FavoritedBy: "favorited_by",
-					Offset:      10,
-					Limit:       20,
-				},
-			},
+			args: testData1.args,
 			mocks: mocks{
 				articleRepository: mocks_articleRepository{
-					search_args_articleSearchParam: repository.ArticleSearchParam{
-						Tag:         &tag,
-						Author:      &authID,
-						FavoritedBy: &favoritedBy,
-						Offset:      10,
-						Limit:       20,
-					},
-					search_retunrs_articles: []model.Article{},
+					search_args_articleSearchParam: testData1.mocks.articleRepository.search_args_articleSearchParam,
+					search_retunrs_articles:        []model.Article{},
 				},
 				favoriteRepository: mocks_favoriteRepository{
 					listBySlugs_args_slugs:        []model.Slug{},
 					listBySlugs_returns_favorites: model.FavoriteSliceMap{},
 				},
-				authService: mocks_authService{
-					currentUser_returns_user: &authmodel.User{ID: "user1"},
-				},
+				authService: testData1.mocks.authService,
 			},
 			wants: wants{
 				result: usecase.Success[ListArticleResult](ListArticleResult{
@@ -260,7 +213,6 @@ func Test_ListArticle_List(t *testing.T) {
 		{
 			name: "invalid_params_should_returns_validation_error",
 			args: args{
-				ctx: context.TODO(),
 				param: ListArticleParam{
 					Tag: strings.Repeat("a", 10000),
 				},
@@ -284,10 +236,7 @@ func Test_ListArticle_List(t *testing.T) {
 		},
 		{
 			name: "article_repository_search_failed_should_returns_failed_result",
-			args: args{
-				ctx:   context.TODO(),
-				param: ListArticleParam{},
-			},
+			args: testData1.args,
 			mocks: mocks{
 				errorHandler: mocks_errorHandler{
 					handle_args_error:       dummyError,
@@ -295,10 +244,8 @@ func Test_ListArticle_List(t *testing.T) {
 					handle_returns_result:   internalErrorResult,
 				},
 				articleRepository: mocks_articleRepository{
-					search_args_articleSearchParam: repository.ArticleSearchParam{
-						Limit: repository.DefaultLimit,
-					},
-					search_results_error: dummyError,
+					search_args_articleSearchParam: testData1.mocks.articleRepository.search_args_articleSearchParam,
+					search_results_error:           dummyError,
 				},
 			},
 			wants: wants{
@@ -312,28 +259,16 @@ func Test_ListArticle_List(t *testing.T) {
 		},
 		{
 			name: "favorite_repository_listBySlugs_failed_should_returns_failed_result",
-			args: args{
-				ctx:   context.TODO(),
-				param: ListArticleParam{},
-			},
+			args: testData1.args,
 			mocks: mocks{
 				errorHandler: mocks_errorHandler{
 					handle_args_error:       dummyError,
 					handle_args_opts_length: 0,
 					handle_returns_result:   internalErrorResult,
 				},
-				articleRepository: mocks_articleRepository{
-					search_args_articleSearchParam: repository.ArticleSearchParam{
-						Limit: repository.DefaultLimit,
-					},
-					search_retunrs_articles: []model.Article{
-						{Slug: "dummy"},
-					},
-				},
+				articleRepository: testData1.mocks.articleRepository,
 				favoriteRepository: mocks_favoriteRepository{
-					listBySlugs_args_slugs: []model.Slug{
-						"dummy",
-					},
+					listBySlugs_args_slugs:    testData1.mocks.favoriteRepository.listBySlugs_args_slugs,
 					listBySlugs_returns_error: dummyError,
 				},
 			},
@@ -347,34 +282,15 @@ func Test_ListArticle_List(t *testing.T) {
 		},
 		{
 			name: "authService_currentUser_failed_should_returns_failed_result",
-			args: args{
-				ctx:   context.TODO(),
-				param: ListArticleParam{},
-			},
+			args: testData1.args,
 			mocks: mocks{
 				errorHandler: mocks_errorHandler{
 					handle_args_error:       dummyError,
 					handle_args_opts_length: 0,
 					handle_returns_result:   internalErrorResult,
 				},
-				articleRepository: mocks_articleRepository{
-					search_args_articleSearchParam: repository.ArticleSearchParam{
-						Limit: repository.DefaultLimit,
-					},
-					search_retunrs_articles: []model.Article{
-						{Slug: "dummy"},
-					},
-				},
-				favoriteRepository: mocks_favoriteRepository{
-					listBySlugs_args_slugs: []model.Slug{
-						"dummy",
-					},
-					listBySlugs_returns_favorites: model.FavoriteSliceMap{
-						"dummy": model.FavoriteSlice{
-							{ArticleSlug: "dummy", UserID: "user1"},
-						},
-					},
-				},
+				articleRepository:  testData1.mocks.articleRepository,
+				favoriteRepository: testData1.mocks.favoriteRepository,
 				authService: mocks_authService{
 					currentUser_returns_err: dummyError,
 				},
@@ -396,17 +312,11 @@ func Test_ListArticle_List(t *testing.T) {
 			authService := mock_auth_service.NewMockAuth(t)
 
 			if tt.configs.errorHandler_handle_should_call {
-				errorHandler.EXPECT().
-					Handle(
-						mock.Anything, mock.Anything, mock.Anything,
-					).
-					Run(func(ctx context.Context, err error, opts ...usecase.ErrorHandlerOption) {
-						assert.ErrorIs(t, err, tt.mocks.errorHandler.handle_args_error, "error of ErrorHandler#Handle args")
-						assert.Len(t, opts, tt.mocks.errorHandler.handle_args_opts_length, "length of ErrorHandler#Hanel option args")
-					}).
-					Return(
-						tt.mocks.errorHandler.handle_returns_result,
-					)
+				errorHandlerExpectations(t, errorHandler, errorHandlerExpectationsOption[ListArticleResult]{
+					HandleArgsError:      tt.mocks.errorHandler.handle_args_error,
+					HandleArgsOptsLength: tt.mocks.errorHandler.handle_args_opts_length,
+					HandleReturnsResult:  tt.mocks.errorHandler.handle_returns_result,
+				})
 			}
 			if !tt.configs.article_search_should_skip {
 				articleRepository.EXPECT().
@@ -439,7 +349,7 @@ func Test_ListArticle_List(t *testing.T) {
 			}
 
 			a := NewListArticle[any](errorHandler, articleRepository, favoriteRepository, authService)
-			got := a.List(tt.args.ctx, tt.args.param)
+			got := a.List(context.Background(), tt.args.param)
 			assert.Equal(t, tt.wants.result, got)
 		})
 	}

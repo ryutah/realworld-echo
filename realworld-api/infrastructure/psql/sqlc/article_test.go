@@ -78,20 +78,15 @@ func TestArticle_Get(t *testing.T) {
 	}
 
 	var (
-		slug     = uuid.New()
-		now      = time.Date(2000, 1, 1, 1, 1, 1, 0, time.UTC)
-		dummyErr = errors.New("dummy")
-	)
-
-	tests := []struct {
-		name    string
-		args    args
-		mocks   mocks
-		wants   wants
-		configs configs
-	}{
-		{
-			name: "given_valid_slug_should_return_expected_article",
+		slug      = uuid.New()
+		now       = time.Date(2000, 1, 1, 1, 1, 1, 0, time.UTC)
+		nowTz     = ToTimestamptz(now)
+		dummyErr  = errors.New("dummy")
+		testData1 = struct {
+			args  args
+			mocks mocks
+			wants wants
+		}{
 			args: args{
 				slug: model.Slug(slug.String()),
 			},
@@ -104,8 +99,8 @@ func TestArticle_Get(t *testing.T) {
 						Body:        "body",
 						Title:       "title",
 						Description: "description",
-						CreatedAt:   now,
-						UpdatedAt:   now,
+						CreatedAt:   nowTz,
+						UpdatedAt:   nowTz,
 					},
 					listArticleTags_args_slugs: []string{
 						slug.String(),
@@ -114,14 +109,14 @@ func TestArticle_Get(t *testing.T) {
 						{
 							ArticleSlug: slug,
 							Name:        "tag1",
-							CreatedAt:   now,
-							UpdatedAt:   now,
+							CreatedAt:   nowTz,
+							UpdatedAt:   nowTz,
 						},
 						{
 							ArticleSlug: slug,
 							Name:        "tag2",
-							CreatedAt:   now,
-							UpdatedAt:   now,
+							CreatedAt:   nowTz,
+							UpdatedAt:   nowTz,
 						},
 					},
 				},
@@ -142,42 +137,41 @@ func TestArticle_Get(t *testing.T) {
 					UpdatedAt: premitive.NewJSTTime(now),
 				},
 			},
+		}
+	)
+
+	tests := []struct {
+		name    string
+		args    args
+		mocks   mocks
+		wants   wants
+		configs configs
+	}{
+		{
+			name:  "given_valid_slug_should_return_expected_article",
+			args:  testData1.args,
+			mocks: testData1.mocks,
+			wants: testData1.wants,
 		},
 		{
 			name: "given_valid_slug_not_exists_tags_should_return_expected_article",
-			args: args{
-				slug: model.Slug(slug.String()),
-			},
+			args: testData1.args,
 			mocks: mocks{
 				querier: mock_querier{
-					getArticle_args_slug: slug,
-					getArticle_returns_article: gen.Article{
-						Slug:        slug,
-						Author:      "author",
-						Body:        "body",
-						Title:       "title",
-						Description: "description",
-						CreatedAt:   now,
-						UpdatedAt:   now,
-					},
-					listArticleTags_args_slugs: []string{
-						slug.String(),
-					},
+					getArticle_args_slug:                testData1.mocks.querier.getArticle_args_slug,
+					getArticle_returns_article:          testData1.mocks.querier.getArticle_returns_article,
+					listArticleTags_args_slugs:          testData1.mocks.querier.listArticleTags_args_slugs,
 					listArticleTags_returns_articleTags: nil,
 				},
 			},
 			wants: wants{
 				article: &model.Article{
-					Slug:   model.Slug(slug.String()),
-					Tags:   nil,
-					Author: "author",
-					Contents: model.ArticleContents{
-						Title:       "title",
-						Description: "description",
-						Body:        "body",
-					},
-					CreatedAt: premitive.NewJSTTime(now),
-					UpdatedAt: premitive.NewJSTTime(now),
+					Slug:      testData1.wants.article.Slug,
+					Tags:      nil,
+					Author:    testData1.wants.article.Author,
+					Contents:  testData1.wants.article.Contents,
+					CreatedAt: testData1.wants.article.CreatedAt,
+					UpdatedAt: testData1.wants.article.UpdatedAt,
 				},
 			},
 		},
@@ -198,12 +192,10 @@ func TestArticle_Get(t *testing.T) {
 		},
 		{
 			name: "given_valid_slug_with_querier_getArticle_returns_no_rows_error_should_return_not_found_error",
-			args: args{
-				slug: model.Slug(slug.String()),
-			},
+			args: testData1.args,
 			mocks: mocks{
 				querier: mock_querier{
-					getArticle_args_slug:     slug,
+					getArticle_args_slug:     testData1.mocks.querier.getArticle_args_slug,
 					getArticle_returns_error: sql.ErrNoRows,
 				},
 			},
@@ -215,31 +207,11 @@ func TestArticle_Get(t *testing.T) {
 			},
 		},
 		{
-			name: "given_valid_slug_with_querier_getArticle_returns_unknown_error_should_return_not_found_error",
-			args: args{
-				slug: model.Slug(slug.String()),
-			},
+			name: "given_valid_slug_with_querier_getArticle_returns_unknown_error_should_return_internal_error",
+			args: testData1.args,
 			mocks: mocks{
 				querier: mock_querier{
-					getArticle_args_slug:     slug,
-					getArticle_returns_error: dummyErr,
-				},
-			},
-			wants: wants{
-				err: derrors.Errors.Internal.Err,
-			},
-			configs: configs{
-				querier_listArticleTags_should_be_skipped: true,
-			},
-		},
-		{
-			name: "given_valid_slug_with_querier_getArticle_returns_unknown_error_should_return_not_found_error",
-			args: args{
-				slug: model.Slug(slug.String()),
-			},
-			mocks: mocks{
-				querier: mock_querier{
-					getArticle_args_slug:     slug,
+					getArticle_args_slug:     testData1.mocks.querier.getArticle_args_slug,
 					getArticle_returns_error: dummyErr,
 				},
 			},
@@ -252,24 +224,12 @@ func TestArticle_Get(t *testing.T) {
 		},
 		{
 			name: "given_valid_slug_with_querier_listArtileTags_returns_unknown_error_should_return_not_found_error",
-			args: args{
-				slug: model.Slug(slug.String()),
-			},
+			args: testData1.args,
 			mocks: mocks{
 				querier: mock_querier{
-					getArticle_args_slug: slug,
-					getArticle_returns_article: gen.Article{
-						Slug:        slug,
-						Author:      "author",
-						Body:        "body",
-						Title:       "title",
-						Description: "description",
-						CreatedAt:   now,
-						UpdatedAt:   now,
-					},
-					listArticleTags_args_slugs: []string{
-						slug.String(),
-					},
+					getArticle_args_slug:          testData1.mocks.querier.getArticle_args_slug,
+					getArticle_returns_article:    testData1.mocks.querier.getArticle_returns_article,
+					listArticleTags_args_slugs:    testData1.mocks.querier.listArticleTags_args_slugs,
 					listArticleTags_returns_error: dummyErr,
 				},
 			},
