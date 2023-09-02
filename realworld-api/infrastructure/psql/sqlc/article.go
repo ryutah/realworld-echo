@@ -43,21 +43,21 @@ func (a *Article) GenerateID(_ context.Context) (model.Slug, error) {
 }
 
 func (a *Article) Get(ctx context.Context, slug model.Slug) (*model.Article, error) {
-	uuid, err := uuid.Parse(slug.String())
+	uid, err := uuid.Parse(slug.String())
 	if err != nil {
 		return nil, derrors.NewInternalError(0, err, "failed to parse slug to uuid")
 	}
 
 	q := a.manager.Querier(ctx)
 
-	article, err := q.GetArticle(ctx, uuid)
+	article, err := q.GetArticle(ctx, uid)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, derrors.NewNotFoundError(0, err, "failed to get article")
 	} else if err != nil {
 		return nil, derrors.NewInternalError(0, err, "failed to get article")
 	}
 
-	articleTags, err := q.ListArticleTags(ctx, []string{article.Slug.String()})
+	articleTags, err := q.ListArticleTags(ctx, []uuid.UUID{article.Slug})
 	if err != nil {
 		return nil, derrors.NewInternalError(0, err, "failed to get article_tags")
 	}

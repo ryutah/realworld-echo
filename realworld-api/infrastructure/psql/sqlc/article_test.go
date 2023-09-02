@@ -62,7 +62,7 @@ func TestArticle_Get(t *testing.T) {
 		getArticle_args_slug                uuid.UUID
 		getArticle_returns_article          gen.Article
 		getArticle_returns_error            error
-		listArticleTags_args_slugs          []string
+		listArticleTags_args_slugs          []uuid.UUID
 		listArticleTags_returns_articleTags []gen.ListArticleTagsRow
 		listArticleTags_returns_error       error
 	}
@@ -111,8 +111,8 @@ func TestArticle_Get(t *testing.T) {
 						CreatedAt:   nowTz,
 						UpdatedAt:   nowTz,
 					},
-					listArticleTags_args_slugs: []string{
-						slug.String(),
+					listArticleTags_args_slugs: []uuid.UUID{
+						slug,
 					},
 					listArticleTags_returns_articleTags: []gen.ListArticleTagsRow{
 						{

@@ -40,7 +40,7 @@ from
     article_tag
     inner join tag on tag.name = article_tag.tag_name
 where
-    article_slug = any ($1::string[])
+    article_slug = any ($1::uuid[])
 `
 
 type ListArticleTagsRow struct {
@@ -50,7 +50,7 @@ type ListArticleTagsRow struct {
 	UpdatedAt   pgtype.Timestamptz `db:"updated_at"`
 }
 
-func (q *Queries) ListArticleTags(ctx context.Context, slugs []string) ([]ListArticleTagsRow, error) {
+func (q *Queries) ListArticleTags(ctx context.Context, slugs []uuid.UUID) ([]ListArticleTagsRow, error) {
 	rows, err := q.db.Query(ctx, ListArticleTags, slugs)
 	if err != nil {
 		return nil, err

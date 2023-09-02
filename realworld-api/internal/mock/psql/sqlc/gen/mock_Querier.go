@@ -217,15 +217,15 @@ func (_c *MockQuerier_GetArticle_Call) RunAndReturn(run func(context.Context, uu
 }
 
 // ListArticleTags provides a mock function with given fields: ctx, slugs
-func (_m *MockQuerier) ListArticleTags(ctx context.Context, slugs []string) ([]gen.ListArticleTagsRow, error) {
+func (_m *MockQuerier) ListArticleTags(ctx context.Context, slugs []uuid.UUID) ([]gen.ListArticleTagsRow, error) {
 	ret := _m.Called(ctx, slugs)
 
 	var r0 []gen.ListArticleTagsRow
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]gen.ListArticleTagsRow, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []uuid.UUID) ([]gen.ListArticleTagsRow, error)); ok {
 		return rf(ctx, slugs)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []string) []gen.ListArticleTagsRow); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []uuid.UUID) []gen.ListArticleTagsRow); ok {
 		r0 = rf(ctx, slugs)
 	} else {
 		if ret.Get(0) != nil {
@@ -233,7 +233,7 @@ func (_m *MockQuerier) ListArticleTags(ctx context.Context, slugs []string) ([]g
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, []uuid.UUID) error); ok {
 		r1 = rf(ctx, slugs)
 	} else {
 		r1 = ret.Error(1)
@@ -249,14 +249,14 @@ type MockQuerier_ListArticleTags_Call struct {
 
 // ListArticleTags is a helper method to define mock.On call
 //   - ctx context.Context
-//   - slugs []string
+//   - slugs []uuid.UUID
 func (_e *MockQuerier_Expecter) ListArticleTags(ctx interface{}, slugs interface{}) *MockQuerier_ListArticleTags_Call {
 	return &MockQuerier_ListArticleTags_Call{Call: _e.mock.On("ListArticleTags", ctx, slugs)}
 }
 
-func (_c *MockQuerier_ListArticleTags_Call) Run(run func(ctx context.Context, slugs []string)) *MockQuerier_ListArticleTags_Call {
+func (_c *MockQuerier_ListArticleTags_Call) Run(run func(ctx context.Context, slugs []uuid.UUID)) *MockQuerier_ListArticleTags_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]string))
+		run(args[0].(context.Context), args[1].([]uuid.UUID))
 	})
 	return _c
 }
@@ -266,7 +266,7 @@ func (_c *MockQuerier_ListArticleTags_Call) Return(_a0 []gen.ListArticleTagsRow,
 	return _c
 }
 
-func (_c *MockQuerier_ListArticleTags_Call) RunAndReturn(run func(context.Context, []string) ([]gen.ListArticleTagsRow, error)) *MockQuerier_ListArticleTags_Call {
+func (_c *MockQuerier_ListArticleTags_Call) RunAndReturn(run func(context.Context, []uuid.UUID) ([]gen.ListArticleTagsRow, error)) *MockQuerier_ListArticleTags_Call {
 	_c.Call.Return(run)
 	return _c
 }

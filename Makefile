@@ -7,7 +7,7 @@ db/up: ## start databse server
 	docker compose up -d db migration
 
 .PHONY: server/start
-server/up: ## start local server
+server/start: ## start local server
 	docker compose up -d
 
 .PHONY: server/stop

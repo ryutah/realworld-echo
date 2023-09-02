@@ -1,0 +1,11 @@
+{{ range $val := Iterate 10 }}
+
+- slug: RAW=gen_random_uuid()
+  title: sample{{ $val }}
+  author: user{{ $val }}
+  body: body{{ $val }}
+  description: desc{{ $val }}
+  created_at: RAW=current_timestamp
+  updated_at: RAW=current_timestamp
+
+{{ end }}

@@ -14,6 +14,7 @@ type Config struct {
 	RequestTimeOutSec int    `default:"60"`
 	Service           string `default:"realworld"`
 	Version           string `default:"v1.0.0"`
+	DBConnection      string `envconfig:"DB_CONNECTION"`
 }
 
 var _config Config

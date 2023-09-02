@@ -15,3 +15,21 @@ services:
       WAIT_HOSTS: db:5432
     volumes:
       - ./realworld-api/resources/migrations:/migrations
+  api:
+    build: ./containers/dev/api
+    volumes:
+      - ./realworld-api:/app
+      - ./.cache/docker/api/pkg:/go/pkg
+    environment:
+      DB_CONNECTION: postgres://psql:psql@db:5432/realworld?sslmode=disable
+      WAIT_HOSTS: db:5432
+    ports:
+      - 8080:8080
+  data_provision:
+    build: ./containers/dev/testdata-loader
+    volumes:
+      - ./realworld-api:/app
+      - ./.cache/docker/testdata-loader/pkg:/go/pkg
+    environment:
+      CONNECTION_NAME: postgres://psql:psql@db:5432/realworld?sslmode=disable
+      WAIT_HOSTS: db:5432

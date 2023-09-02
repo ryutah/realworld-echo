@@ -15,7 +15,7 @@ type Querier interface {
 	CreateOrDoNothingTag(ctx context.Context, arg CreateOrDoNothingTagParams) error
 	DeleteArticleTagBySlug(ctx context.Context, articleSlug uuid.UUID) error
 	GetArticle(ctx context.Context, slug uuid.UUID) (Article, error)
-	ListArticleTags(ctx context.Context, slugs []string) ([]ListArticleTagsRow, error)
+	ListArticleTags(ctx context.Context, slugs []uuid.UUID) ([]ListArticleTagsRow, error)
 	UpsertArticle(ctx context.Context, arg UpsertArticleParams) error
 }
 

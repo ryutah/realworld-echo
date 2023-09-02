@@ -13,6 +13,7 @@ init: ## initialize projects
 	go install github.com/vektra/mockery/v2@v2.32.0
 	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.16.2
 	go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.20.0
+	go install github.com/spf13/cobra-cli@v1.3.0
 	npm install -g sql-formatter@12.2.4
 
 .PHONY: generate
