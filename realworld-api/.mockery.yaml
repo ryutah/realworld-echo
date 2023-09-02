@@ -15,6 +15,10 @@ packages:
     config:
       dir: internal/mock/auth/service
       all: true
+  github.com/ryutah/realworld-echo/realworld-api/domain/auth/repository:
+    config:
+      dir: internal/mock/auth/repository
+      all: true
   github.com/ryutah/realworld-echo/realworld-api/domain/transaction:
     config:
       dir: internal/mock/transaction

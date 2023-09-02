@@ -71,7 +71,7 @@ func Test_GetArticle_Get(t *testing.T) {
 		slug1      model.Slug       = "slug"
 		user1      authmodel.UserID = "user1"
 		user2      authmodel.UserID = "user2"
-		author     authmodel.UserID = "Author"
+		author                      = model.UserProfile{ID: "Author"}
 		failResult                  = usecase.Fail[GetArticleResult](usecase.NewFailResult(usecase.FailTypeInternalError, "error"))
 		testData1                   = struct {
 			args  args
@@ -106,9 +106,9 @@ func Test_GetArticle_Get(t *testing.T) {
 				},
 				followRepository: mocks_followRepository{
 					existsList_args_followedBy: user1,
-					existsList_args_following:  []authmodel.UserID{author},
+					existsList_args_following:  []authmodel.UserID{author.ID},
 					existsList_returns_followersExistsMap: model.FollowersExistsMap{
-						author: true,
+						author.ID: true,
 					},
 				},
 				authService: mocks_authService{

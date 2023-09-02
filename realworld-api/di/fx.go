@@ -3,7 +3,8 @@ package di
 import (
 	"github.com/ryutah/realworld-echo/realworld-api/api/rest"
 	"github.com/ryutah/realworld-echo/realworld-api/config"
-	"github.com/ryutah/realworld-echo/realworld-api/domain/article/repository"
+	articlerepo "github.com/ryutah/realworld-echo/realworld-api/domain/article/repository"
+	authrepo "github.com/ryutah/realworld-echo/realworld-api/domain/auth/repository"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/auth/service"
 	"github.com/ryutah/realworld-echo/realworld-api/infrastructure/firebase"
 	"github.com/ryutah/realworld-echo/realworld-api/infrastructure/psql/sqlc"
@@ -47,11 +48,18 @@ func restProvider() fx.Option {
 	)
 }
 
-func localRepositoryProvider() fx.Option {
+func localAuthRepositoryProvider() fx.Option {
+	return fx.Provide(
+		fx.Annotate(firebase.NewUser, fx.As(new(authrepo.User))),
+	)
+}
+
+func localArticleRepositoryProvider() fx.Option {
 	return fx.Provide(
 		fx.Annotate(sqlc.NewDBManager, fx.As(new(sqlc.DBManager))),
-		fx.Annotate(sqlc.NewArtile, fx.As(new(repository.Article))),
-		fx.Annotate(sqlc.NewFavorite, fx.As(new(repository.Favorite))),
+		fx.Annotate(sqlc.NewArtile, fx.As(new(articlerepo.Article))),
+		fx.Annotate(sqlc.NewFavorite, fx.As(new(articlerepo.Favorite))),
+		fx.Annotate(sqlc.NewFollow, fx.As(new(articlerepo.Follow))),
 	)
 }
 
@@ -75,8 +83,9 @@ type InjectParam struct {
 func InjectLocal(param InjectParam, f func(e *rest.Extcuter)) *fx.App {
 	return fx.New(
 		fx.Supply(param.DBConfig),
-		localRepositoryProvider(),
+		localArticleRepositoryProvider(),
 		localAuthServiceProvider(),
+		localAuthRepositoryProvider(),
 		localTraceProvider(),
 		errorReportProvider(),
 		inputPortProvider(),

@@ -18,8 +18,8 @@ func (u UserID) String() string {
 
 type User struct {
 	ID      UserID
-	Account *Account
-	Profile *Profile
+	Account Account
+	Profile Profile
 }
 
 type Account struct {

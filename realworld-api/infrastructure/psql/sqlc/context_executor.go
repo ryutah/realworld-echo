@@ -2,6 +2,7 @@ package sqlc
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cockroachdb/errors"
 	pgxuuid "github.com/jackc/pgx-gofrs-uuid"
@@ -34,7 +35,7 @@ var _ DBManager = (*dbManager)(nil)
 func NewDBManager(conf DBConfig, lc fx.Lifecycle) (*dbManager, error) {
 	config, err := pgxpool.ParseConfig(conf.ConnectionName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
 	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
 		pgxuuid.Register(conn.TypeMap())
@@ -42,7 +43,10 @@ func NewDBManager(conf DBConfig, lc fx.Lifecycle) (*dbManager, error) {
 	}
 	dbpool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create db pool: %w", err)
+	}
+	if err := dbpool.Ping(context.Background()); err != nil {
+		return nil, fmt.Errorf("failed to check connection: %e", err)
 	}
 
 	lc.Append(fx.Hook{

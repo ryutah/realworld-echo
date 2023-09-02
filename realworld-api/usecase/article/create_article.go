@@ -115,7 +115,7 @@ func (c CreateArticleParam) toDomain(slug model.Slug, user *authmodel.User) (*mo
 	if err != nil {
 		return nil, nil, err
 	}
-	article, err := model.NewArticle(slug, *content, user.ID, names)
+	article, err := model.NewArticle(slug, *content, *model.NewUserProfile(*user), names)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -118,7 +118,7 @@ func (a *ListArticle) generateResult(articles model.ArticleSlice, favorites mode
 		)
 		if user != nil {
 			favorited = favorites[item.Slug].IsFavorited(user.ID, item.Slug)
-			following = follows.IsFollowing(item.Author)
+			following = follows.IsFollowing(item.Author.ID)
 		}
 		return ListArticleResultArtile{
 			Aritcle:         item,

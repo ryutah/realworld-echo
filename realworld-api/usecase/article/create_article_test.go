@@ -97,7 +97,7 @@ func TestCreateArticle_Create(t *testing.T) {
 					generateID_returns_slug: "slug",
 					save_args_article: model.Article{
 						Slug:   "slug",
-						Author: "user1",
+						Author: model.UserProfile{ID: "user1"},
 						Contents: model.ArticleContents{
 							Title:       "title",
 							Description: "desc",
@@ -128,7 +128,7 @@ func TestCreateArticle_Create(t *testing.T) {
 			want: usecase.Success(CreateArticleResult{
 				Article: model.Article{
 					Slug:   "slug",
-					Author: "user1",
+					Author: model.UserProfile{ID: "user1"},
 					Contents: model.ArticleContents{
 						Title:       "title",
 						Description: "desc",
@@ -416,7 +416,7 @@ func TestCreateArticleParam_ToDomain(t *testing.T) {
 			wants: wants{
 				article: &model.Article{
 					Slug:   "slug",
-					Author: "user1",
+					Author: model.UserProfile{ID: "user1"},
 					Contents: model.ArticleContents{
 						Title:       "title",
 						Description: "description",

@@ -19,10 +19,10 @@ func NewAuth() Auth {
 
 func (a *auth) CurrentUserFromToken(ctx context.Context, token string) (*model.User, error) {
 	return &model.User{
-		Account: &model.Account{
+		Account: model.Account{
 			Email: "hogehoge@sample.com",
 		},
-		Profile: &model.Profile{
+		Profile: model.Profile{
 			Username: "sample_user",
 			Image:    "http://xxxxxxxx.com",
 		},
@@ -31,10 +31,10 @@ func (a *auth) CurrentUserFromToken(ctx context.Context, token string) (*model.U
 
 func (a *auth) CurrentUser(context.Context) (*model.User, bool, error) {
 	return &model.User{
-		Account: &model.Account{
+		Account: model.Account{
 			Email: "hogehoge@sample.com",
 		},
-		Profile: &model.Profile{
+		Profile: model.Profile{
 			Username: "sample_user",
 			Image:    "http://xxxxxxxx.com",
 		},

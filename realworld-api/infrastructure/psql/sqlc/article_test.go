@@ -9,10 +9,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
+	authmodel "github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
 	. "github.com/ryutah/realworld-echo/realworld-api/infrastructure/psql/sqlc"
 	"github.com/ryutah/realworld-echo/realworld-api/infrastructure/psql/sqlc/gen"
+	mock_auth_repository "github.com/ryutah/realworld-echo/realworld-api/internal/mock/auth/repository"
 	mock_psql_sqlc "github.com/ryutah/realworld-echo/realworld-api/internal/mock/psql/sqlc"
 	mock_psql_sqlc_gen "github.com/ryutah/realworld-echo/realworld-api/internal/mock/psql/sqlc/gen"
 	"github.com/stretchr/testify/assert"
@@ -39,7 +41,7 @@ func TestArticle_GenerateID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewArtile(nil).GenerateID(context.Background())
+			got, err := NewArtile(nil, nil).GenerateID(context.Background())
 			if !tt.want.emptySlug {
 				assert.NotEmpty(t, got)
 			} else {
@@ -64,8 +66,14 @@ func TestArticle_Get(t *testing.T) {
 		listArticleTags_returns_articleTags []gen.ListArticleTagsRow
 		listArticleTags_returns_error       error
 	}
+	type mock_userRepository struct {
+		get_args_id       authmodel.UserID
+		get_returns_user  *authmodel.User
+		get_returns_error error
+	}
 	type mocks struct {
-		querier mock_querier
+		querier        mock_querier
+		userRepository mock_userRepository
 	}
 	type wants struct {
 		article *model.Article
@@ -75,6 +83,7 @@ func TestArticle_Get(t *testing.T) {
 		dbManager_querier_should_be_skipped       bool
 		querier_getArticle_should_be_skipped      bool
 		querier_listArticleTags_should_be_skipped bool
+		userRepo_get_should_be_skipped            bool
 	}
 
 	var (
@@ -120,6 +129,20 @@ func TestArticle_Get(t *testing.T) {
 						},
 					},
 				},
+				userRepository: mock_userRepository{
+					get_args_id: authmodel.UserID("author"),
+					get_returns_user: &authmodel.User{
+						ID: "author",
+						Account: authmodel.Account{
+							Email: "sample@gmail.com",
+						},
+						Profile: authmodel.Profile{
+							Username: "name",
+							Bio:      "bio",
+							Image:    "http://xxxxxxxx.png",
+						},
+					},
+				},
 			},
 			wants: wants{
 				article: &model.Article{
@@ -127,7 +150,12 @@ func TestArticle_Get(t *testing.T) {
 					Tags: []model.TagName{
 						"tag1", "tag2",
 					},
-					Author: "author",
+					Author: model.UserProfile{
+						ID:    "author",
+						Name:  "name",
+						Bio:   "bio",
+						Image: "http://xxxxxxxx.png",
+					},
 					Contents: model.ArticleContents{
 						Title:       "title",
 						Description: "description",
@@ -163,6 +191,7 @@ func TestArticle_Get(t *testing.T) {
 					listArticleTags_args_slugs:          testData1.mocks.querier.listArticleTags_args_slugs,
 					listArticleTags_returns_articleTags: nil,
 				},
+				userRepository: testData1.mocks.userRepository,
 			},
 			wants: wants{
 				article: &model.Article{
@@ -188,6 +217,7 @@ func TestArticle_Get(t *testing.T) {
 				dbManager_querier_should_be_skipped:       true,
 				querier_getArticle_should_be_skipped:      true,
 				querier_listArticleTags_should_be_skipped: true,
+				userRepo_get_should_be_skipped:            true,
 			},
 		},
 		{
@@ -204,6 +234,7 @@ func TestArticle_Get(t *testing.T) {
 			},
 			configs: configs{
 				querier_listArticleTags_should_be_skipped: true,
+				userRepo_get_should_be_skipped:            true,
 			},
 		},
 		{
@@ -220,10 +251,11 @@ func TestArticle_Get(t *testing.T) {
 			},
 			configs: configs{
 				querier_listArticleTags_should_be_skipped: true,
+				userRepo_get_should_be_skipped:            true,
 			},
 		},
 		{
-			name: "given_valid_slug_with_querier_listArtileTags_returns_unknown_error_should_return_not_found_error",
+			name: "given_valid_slug_with_querier_listArtileTags_returns_unknown_error_should_return_internal_error",
 			args: testData1.args,
 			mocks: mocks{
 				querier: mock_querier{
@@ -236,6 +268,23 @@ func TestArticle_Get(t *testing.T) {
 			wants: wants{
 				err: derrors.Errors.Internal.Err,
 			},
+			configs: configs{
+				userRepo_get_should_be_skipped: true,
+			},
+		},
+		{
+			name: "given_valid_slug_with_userRepo_get_returns_error_should_return_not_internal_error",
+			args: testData1.args,
+			mocks: mocks{
+				querier: testData1.mocks.querier,
+				userRepository: mock_userRepository{
+					get_args_id:       testData1.mocks.userRepository.get_args_id,
+					get_returns_error: dummyErr,
+				},
+			},
+			wants: wants{
+				err: derrors.Errors.Internal.Err,
+			},
 		},
 	}
 
@@ -243,6 +292,7 @@ func TestArticle_Get(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			querier := mock_psql_sqlc_gen.NewMockQuerier(t)
 			manager := mock_psql_sqlc.NewMockDBManager(t)
+			userRepo := mock_auth_repository.NewMockUser(t)
 
 			if !tt.configs.dbManager_querier_should_be_skipped {
 				manager.EXPECT().Querier(mock.Anything).Return(querier)
@@ -269,8 +319,19 @@ func TestArticle_Get(t *testing.T) {
 						tt.mocks.querier.listArticleTags_returns_error,
 					)
 			}
+			if !tt.configs.userRepo_get_should_be_skipped {
+				userRepo.EXPECT().
+					Get(
+						mock.Anything,
+						tt.mocks.userRepository.get_args_id,
+					).
+					Return(
+						tt.mocks.userRepository.get_returns_user,
+						tt.mocks.userRepository.get_returns_error,
+					)
+			}
 
-			got, err := NewArtile(manager).Get(context.Background(), tt.args.slug)
+			got, err := NewArtile(manager, userRepo).Get(context.Background(), tt.args.slug)
 			assert.Equal(t, tt.wants.article, got)
 			if !assert.ErrorIs(t, err, tt.wants.err) {
 				t.Logf("%+v", err)

@@ -82,8 +82,8 @@ func Test_ListArticle_List(t *testing.T) {
 		slug2, _  = model.NewSlug(uuid.New().String())
 		user1     = authmodel.UserID("user1")
 		user2     = authmodel.UserID("user2")
-		author1   = authmodel.UserID("author1")
-		author2   = authmodel.UserID("author2")
+		author1   = model.UserProfile{ID: "author1"}
+		author2   = model.UserProfile{ID: "author2"}
 		testData1 = struct {
 			args  args
 			mocks mocks
@@ -92,7 +92,7 @@ func Test_ListArticle_List(t *testing.T) {
 			args: args{
 				param: ListArticleParam{
 					Tag:         "tag",
-					Author:      author1.String(),
+					Author:      author1.ID.String(),
 					FavoritedBy: user1.String(),
 					Offset:      10,
 					Limit:       20,
@@ -102,7 +102,7 @@ func Test_ListArticle_List(t *testing.T) {
 				articleRepository: mocks_articleRepository{
 					search_args_articleSearchParam: repository.ArticleSearchParam{
 						Tag:         &tag,
-						Author:      &author1,
+						Author:      &author1.ID,
 						FavoritedBy: &user1,
 						Offset:      10,
 						Limit:       20,
@@ -129,11 +129,11 @@ func Test_ListArticle_List(t *testing.T) {
 				followRepository: mocks_followRepository{
 					existsList_args_followedBy: user1,
 					existsList_args_followings: []authmodel.UserID{
-						author1, author2,
+						author1.ID, author2.ID,
 					},
 					existsList_returns_followersExistsMap: model.FollowersExistsMap{
-						author1: true,
-						author2: false,
+						author1.ID: true,
+						author2.ID: false,
 					},
 				},
 				authService: mocks_authService{

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	. "github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
-	authmodel "github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/errors"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/xtime"
@@ -117,7 +116,7 @@ func TestNewArticle(t *testing.T) {
 	type args struct {
 		slug     Slug
 		contents ArticleContents
-		author   authmodel.UserID
+		author   UserProfile
 		tags     []TagName
 	}
 	type mocks struct {
@@ -150,16 +149,20 @@ func TestNewArticle(t *testing.T) {
 			args: args{
 				slug:     "slug",
 				contents: contents,
-				author:   "author",
-				tags:     tags,
+				author: UserProfile{
+					ID: "author",
+				},
+				tags: tags,
 			},
 			mocks: mocks{
 				now: nowFunc,
 			},
 			want: wants{
 				article: &Article{
-					Slug:      "slug",
-					Author:    "author",
+					Slug: "slug",
+					Author: UserProfile{
+						ID: "author",
+					},
 					Contents:  contents,
 					Tags:      tags,
 					CreatedAt: premitive.NewJSTTime(now),
@@ -173,24 +176,10 @@ func TestNewArticle(t *testing.T) {
 			args: args{
 				slug:     "",
 				contents: contents,
-				author:   "author",
-				tags:     tags,
-			},
-			mocks: mocks{
-				now: nowFunc,
-			},
-			want: wants{
-				article: nil,
-				err:     errors.Errors.Validation.Err,
-			},
-		},
-		{
-			name: "blank_author_should_return_validation_error",
-			args: args{
-				slug:     "slug",
-				contents: contents,
-				author:   "",
-				tags:     tags,
+				author: UserProfile{
+					ID: "author",
+				},
+				tags: tags,
 			},
 			mocks: mocks{
 				now: nowFunc,
@@ -283,7 +272,7 @@ func TestArticle_Edit(t *testing.T) {
 		baseArticle = func() *Article {
 			return &Article{
 				Slug:   "slug",
-				Author: "author",
+				Author: UserProfile{ID: "author"},
 				Contents: ArticleContents{
 					Title:       "title",
 					Description: "description",

@@ -19,20 +19,20 @@ func (a ArticleSlice) Slugs() []Slug {
 
 func (a ArticleSlice) Authors() []authmodel.UserID {
 	return lo.Map(a, func(item Article, _ int) authmodel.UserID {
-		return item.Author
+		return item.Author.ID
 	})
 }
 
 type Article struct {
 	Slug      Slug `validate:"required"`
 	Tags      []TagName
-	Author    authmodel.UserID `validate:"required"`
+	Author    UserProfile
 	Contents  ArticleContents
 	CreatedAt premitive.JSTTime `validate:"required"`
 	UpdatedAt premitive.JSTTime `validate:"required"`
 }
 
-func NewArticle(slug Slug, contents ArticleContents, author authmodel.UserID, tags []TagName) (*Article, error) {
+func NewArticle(slug Slug, contents ArticleContents, author UserProfile, tags []TagName) (*Article, error) {
 	now := premitive.NewJSTTime(xtime.Now())
 	return ReCreateArticle(slug, contents, author, tags, now, now)
 }
@@ -40,7 +40,7 @@ func NewArticle(slug Slug, contents ArticleContents, author authmodel.UserID, ta
 func ReCreateArticle(
 	slug Slug,
 	contents ArticleContents,
-	author authmodel.UserID,
+	author UserProfile,
 	tags []TagName,
 	createdAt, updatedAt premitive.JSTTime,
 ) (*Article, error) {

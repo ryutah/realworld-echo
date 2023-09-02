@@ -93,7 +93,7 @@ func (a *GetArticle) Get(ctx context.Context, slugStr string) *usecase.Result[Ge
 		return a.errorHandler.Handle(ctx, err)
 	}
 
-	follows, err := a.repository.follow.ExistsList(ctx, user.ID, article.Author)
+	follows, err := a.repository.follow.ExistsList(ctx, user.ID, article.Author.ID)
 	if err != nil {
 		return a.errorHandler.Handle(ctx, err)
 	}
@@ -101,6 +101,6 @@ func (a *GetArticle) Get(ctx context.Context, slugStr string) *usecase.Result[Ge
 		Article:         *article,
 		Favorited:       favorites.IsFavorited(user.ID, article.Slug),
 		Favorites:       favorites,
-		FollowingAuthor: follows.IsFollowing(article.Author),
+		FollowingAuthor: follows.IsFollowing(article.Author.ID),
 	})
 }

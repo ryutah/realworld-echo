@@ -9,6 +9,7 @@ import (
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/repository"
 	authmodel "github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
+	authrepo "github.com/ryutah/realworld-echo/realworld-api/domain/auth/repository"
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/transaction"
@@ -19,13 +20,21 @@ import (
 type Article struct {
 	transaction transaction.Transaction
 	manager     DBManager
+	repository  struct {
+		user authrepo.User
+	}
 }
 
 var _ repository.Article = (*Article)(nil)
 
-func NewArtile(manager DBManager) *Article {
+func NewArtile(manager DBManager, userRepo authrepo.User) *Article {
 	return &Article{
 		manager: manager,
+		repository: struct {
+			user authrepo.User
+		}{
+			user: userRepo,
+		},
 	}
 }
 
@@ -53,7 +62,12 @@ func (a *Article) Get(ctx context.Context, slug model.Slug) (*model.Article, err
 		return nil, derrors.NewInternalError(0, err, "failed to get article_tags")
 	}
 
-	return a.reCreateEntity(article, articleTags)
+	author, err := a.repository.user.Get(ctx, authmodel.UserID(article.Author))
+	if err != nil {
+		return nil, derrors.NewInternalError(0, err, "failed to get author")
+	}
+
+	return a.reCreateEntity(article, *author, articleTags)
 }
 
 func (a *Article) Save(ctx context.Context, article model.Article) error {
@@ -67,7 +81,7 @@ func (a *Article) Save(ctx context.Context, article model.Article) error {
 
 		if err := q.UpsertArticle(ctx, gen.UpsertArticleParams{
 			Slug:        slug,
-			Author:      article.Author.String(),
+			Author:      article.Author.ID.String(),
 			Body:        article.Contents.Body.String(),
 			Title:       article.Contents.Title.String(),
 			Description: article.Contents.Description.String(),
@@ -99,12 +113,11 @@ func (a *Article) Search(_ context.Context, _ repository.ArticleSearchParam) (mo
 	panic("not implemented") // TODO: Implement
 }
 
-func (a *Article) reCreateEntity(article gen.Article, tags []gen.ListArticleTagsRow) (*model.Article, error) {
+func (a *Article) reCreateEntity(article gen.Article, author authmodel.User, tags []gen.ListArticleTagsRow) (*model.Article, error) {
 	slug, err := model.NewSlug(article.Slug.String())
 	if err != nil {
 		return nil, err
 	}
-	author, err := authmodel.NewUserID(article.Author)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +136,7 @@ func (a *Article) reCreateEntity(article gen.Article, tags []gen.ListArticleTags
 	return model.ReCreateArticle(
 		slug,
 		*contents,
-		author,
+		*model.NewUserProfile(author),
 		tagNames,
 		premitive.NewJSTTime(article.CreatedAt.Time),
 		premitive.NewJSTTime(article.UpdatedAt.Time),
