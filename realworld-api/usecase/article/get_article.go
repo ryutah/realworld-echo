@@ -15,9 +15,10 @@ import (
 
 type (
 	GetArticleResult struct {
-		Article   model.Article
-		Favorited bool
-		Favorites model.FavoriteSlice
+		Article         model.Article
+		Favorited       bool
+		Favorites       model.FavoriteSlice
+		FollowingAuthor bool
 	}
 	GetArticleInputPort interface {
 		Get(ctx context.Context, slugStr string) *usecase.Result[GetArticleResult]
@@ -29,6 +30,7 @@ type GetArticle struct {
 	repository   struct {
 		article   repository.Article
 		favorites repository.Favorite
+		follow    repository.Follow
 	}
 	service struct {
 		auth service.Auth
@@ -39,6 +41,7 @@ func NewGetArticle(
 	errorHandler usecase.ErrorHandler[GetArticleResult],
 	articleRepo repository.Article,
 	favoriteRepo repository.Favorite,
+	followRepo repository.Follow,
 	authService service.Auth,
 ) GetArticleInputPort {
 	return &GetArticle{
@@ -46,9 +49,11 @@ func NewGetArticle(
 		repository: struct {
 			article   repository.Article
 			favorites repository.Favorite
+			follow    repository.Follow
 		}{
 			article:   articleRepo,
 			favorites: favoriteRepo,
+			follow:    followRepo,
 		},
 		service: struct {
 			auth service.Auth
@@ -77,16 +82,25 @@ func (a *GetArticle) Get(ctx context.Context, slugStr string) *usecase.Result[Ge
 		return a.errorHandler.Handle(ctx, err)
 	}
 
-	var isFavorited bool
-	if user, err := a.service.auth.CurrentUser(ctx); err == nil {
-		isFavorited = favorites.IsFavorited(user.ID, article.Slug)
-	} else if !errors.Is(err, derrors.Errors.NotAuthorized.Err) {
+	user, err := a.service.auth.CurrentUser(ctx)
+	if errors.Is(err, derrors.Errors.NotAuthorized.Err) {
+		return usecase.Success(GetArticleResult{
+			Article:   *article,
+			Favorited: false,
+			Favorites: favorites,
+		})
+	} else if err != nil {
 		return a.errorHandler.Handle(ctx, err)
 	}
 
+	follows, err := a.repository.follow.ExistsList(ctx, user.ID, article.Author)
+	if err != nil {
+		return a.errorHandler.Handle(ctx, err)
+	}
 	return usecase.Success(GetArticleResult{
-		Article:   *article,
-		Favorited: isFavorited,
-		Favorites: favorites,
+		Article:         *article,
+		Favorited:       favorites.IsFavorited(user.ID, article.Slug),
+		Favorites:       favorites,
+		FollowingAuthor: follows.IsFollowing(article.Author),
 	})
 }

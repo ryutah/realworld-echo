@@ -6,6 +6,7 @@ import (
 
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/model"
 	"github.com/ryutah/realworld-echo/realworld-api/usecase"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -22,9 +23,9 @@ func mustNewTagName(s string) *model.TagName {
 }
 
 type errorHandlerExpectationsOption[T any] struct {
-	HandleArgsError      error
-	HandleArgsOptsLength int
-	HandleReturnsResult  *usecase.Result[T]
+	HandleArgsError     error
+	HandleArgsOpts      []usecase.ErrorHandlerOption
+	HandleReturnsResult *usecase.Result[T]
 }
 
 func transactionExpectations(t *testing.T, transaction *mock_transaction.MockTransaction) {
@@ -42,12 +43,13 @@ func errorHandlerExpectations[T any](t *testing.T, errorHandler *mock_usecase.Mo
 
 	errorHandler.EXPECT().
 		Handle(
-			mock.Anything, mock.Anything, mock.Anything,
+			mock.Anything,
+			mock.Anything,
+			lo.ToAnySlice(opt.HandleArgsOpts)...,
 		).
 		Run(
 			func(ctx context.Context, err error, opts ...usecase.ErrorHandlerOption) {
 				assert.ErrorIs(t, err, opt.HandleArgsError, "error of ErrorHandler#Handle args")
-				assert.Len(t, opts, opt.HandleArgsOptsLength, "length of ErrorHandler#Hanel option args")
 			},
 		).
 		Return(opt.HandleReturnsResult)

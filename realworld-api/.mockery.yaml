@@ -6,6 +6,7 @@ packages:
     interfaces:
       ErrorHandler:
       ErrorReporter:
+      ErrorHandlerOption:
   github.com/ryutah/realworld-echo/realworld-api/domain/article/repository:
     config:
       dir: internal/mock/article/repository

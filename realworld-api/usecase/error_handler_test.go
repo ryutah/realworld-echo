@@ -10,6 +10,7 @@ import (
 	mock_auth_service "github.com/ryutah/realworld-echo/realworld-api/internal/mock/auth/service"
 	mock_usecase "github.com/ryutah/realworld-echo/realworld-api/internal/mock/usecase"
 	. "github.com/ryutah/realworld-echo/realworld-api/usecase"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -24,17 +25,19 @@ func Test_ErrorHandler_Handle(t *testing.T) {
 		currentUser_returns_user  *model.User
 		currentUser_returns_error error
 	}
+	type mocks_errorHandlerOption struct {
+		apply_params_errorHandlerFunc ErrorHandlerFunc
+	}
 	type mocks struct {
-		errorReporter mocks_errorReporter
-		authService   mocks_authService
+		errorReporter       mocks_errorReporter
+		errorHandlerOptions []mocks_errorHandlerOption
+		authService         mocks_authService
 	}
 	type configs struct {
 		isInternalError bool
 	}
 	type args struct {
-		ctx  context.Context
-		err  error
-		opts []ErrorHandlerOption
+		err error
 	}
 	type wants struct {
 		result *Result[any]
@@ -49,13 +52,45 @@ func Test_ErrorHandler_Handle(t *testing.T) {
 		{
 			name: "when_given_error_match_custome_error_handler_error_should_call_custom_error_handler_and_return_expected_result",
 			args: args{
-				ctx: context.TODO(),
 				err: dummyError,
-				opts: []ErrorHandlerOption{
-					func(ehc *ErrorHandlerConifg) {
-						ehc.AddHandlers(func(ctx context.Context, err error) (*FailResult, bool) {
+			},
+			mocks: mocks{
+				errorHandlerOptions: []mocks_errorHandlerOption{
+					{
+						apply_params_errorHandlerFunc: func(ctx context.Context, err error) (*FailResult, bool) {
 							return NewFailResult(FailTypeBadRequest, "test_faile_result"), true
-						})
+						},
+					},
+				},
+			},
+			configs: configs{
+				isInternalError: false,
+			},
+			wants: wants{
+				result: Fail[any](NewFailResult(FailTypeBadRequest, "test_faile_result")),
+			},
+		},
+		{
+			name: "when_given_second_option_error_match_custome_error_handler_error_should_call_custom_error_handler_and_return_expected_result",
+			args: args{
+				err: dummyError,
+			},
+			mocks: mocks{
+				errorHandlerOptions: []mocks_errorHandlerOption{
+					{
+						apply_params_errorHandlerFunc: func(ctx context.Context, err error) (*FailResult, bool) {
+							return nil, false
+						},
+					},
+					{
+						apply_params_errorHandlerFunc: func(ctx context.Context, err error) (*FailResult, bool) {
+							return NewFailResult(FailTypeBadRequest, "test_faile_result"), true
+						},
+					},
+					{
+						apply_params_errorHandlerFunc: func(ctx context.Context, err error) (*FailResult, bool) {
+							return nil, false
+						},
 					},
 				},
 			},
@@ -69,15 +104,7 @@ func Test_ErrorHandler_Handle(t *testing.T) {
 		{
 			name: "when_given_error_not_match_custome_error_handler_error_should_call_ErroReporter#Report_and_ErrorOutputPort#InternalError_and_return_expected_result",
 			args: args{
-				ctx: context.TODO(),
 				err: dummyError,
-				opts: []ErrorHandlerOption{
-					func(ehc *ErrorHandlerConifg) {
-						ehc.AddHandlers(func(ctx context.Context, err error) (*FailResult, bool) {
-							return nil, false
-						})
-					},
-				},
 			},
 			mocks: mocks{
 				errorReporter: mocks_errorReporter{
@@ -86,6 +113,13 @@ func Test_ErrorHandler_Handle(t *testing.T) {
 				authService: mocks_authService{
 					currentUser_returns_user: &model.User{
 						ID: "user_id",
+					},
+				},
+				errorHandlerOptions: []mocks_errorHandlerOption{
+					{
+						apply_params_errorHandlerFunc: func(ctx context.Context, err error) (*FailResult, bool) {
+							return nil, false
+						},
 					},
 				},
 			},
@@ -101,8 +135,20 @@ func Test_ErrorHandler_Handle(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var errorHandlerOptions []*mock_usecase.MockErrorHandlerOption
 			errorReporter := mock_usecase.NewMockErrorReporter(t)
 			authService := mock_auth_service.NewMockAuth(t)
+
+			for i := range tt.mocks.errorHandlerOptions {
+				idx := i
+				opt := mock_usecase.NewMockErrorHandlerOption(t)
+				opt.EXPECT().
+					Apply(mock.Anything).
+					Run(func(c *ErrorHandlerConfig) {
+						c.AddHandlers(tt.mocks.errorHandlerOptions[idx].apply_params_errorHandlerFunc)
+					})
+				errorHandlerOptions = append(errorHandlerOptions, opt)
+			}
 
 			if tt.configs.isInternalError {
 				errorReporter.EXPECT().Report(
@@ -118,8 +164,16 @@ func Test_ErrorHandler_Handle(t *testing.T) {
 					)
 			}
 
-			e := NewErrorHandler[any](errorReporter, authService)
-			got := e.Handle(tt.args.ctx, tt.args.err, tt.args.opts...)
+			got := NewErrorHandler[any](errorReporter, authService).Handle(
+				context.Background(),
+				tt.args.err,
+				lo.Map(
+					errorHandlerOptions,
+					func(i *mock_usecase.MockErrorHandlerOption, _ int) ErrorHandlerOption {
+						return ErrorHandlerOption(i)
+					},
+				)...,
+			)
 			assert.Equal(t, tt.wants.result, got)
 			errorReporter.AssertExpectations(t)
 		})
@@ -134,7 +188,6 @@ func Test_WithNotFoundHandler(t *testing.T) {
 		errs []error
 	}
 	type calls struct {
-		ctx context.Context
 		err error
 	}
 	type wants struct {
@@ -154,7 +207,6 @@ func Test_WithNotFoundHandler(t *testing.T) {
 				errs: []error{dummyError, dummyError2},
 			},
 			calls: calls{
-				ctx: context.TODO(),
 				err: dummyError,
 			},
 			wants: wants{
@@ -168,7 +220,6 @@ func Test_WithNotFoundHandler(t *testing.T) {
 				errs: []error{nil},
 			},
 			calls: calls{
-				ctx: context.TODO(),
 				err: dummyError,
 			},
 			wants: wants{
@@ -182,7 +233,6 @@ func Test_WithNotFoundHandler(t *testing.T) {
 				errs: []error{dummyError},
 			},
 			calls: calls{
-				ctx: context.TODO(),
 				err: dummyError2,
 			},
 			wants: wants{
@@ -195,10 +245,10 @@ func Test_WithNotFoundHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			opt := WithNotFoundHandler(tt.args.errs...)
-			var config ErrorHandlerConifg
-			opt(&config)
+			var config ErrorHandlerConfig
+			opt.Apply(&config)
 
-			got, ok := config.Handlers()[0](tt.calls.ctx, tt.calls.err)
+			got, ok := config.Handlers()[0](context.Background(), tt.calls.err)
 			assert.Equal(t, tt.wants.result, got, "result")
 			assert.Equal(t, tt.wants.ok, ok, "ok")
 		})
@@ -213,7 +263,6 @@ func Test_WithBadRequestHandler(t *testing.T) {
 		errs []error
 	}
 	type calls struct {
-		ctx context.Context
 		err error
 	}
 	type wants struct {
@@ -233,7 +282,6 @@ func Test_WithBadRequestHandler(t *testing.T) {
 				errs: []error{dummyError, dummyError2},
 			},
 			calls: calls{
-				ctx: context.TODO(),
 				err: dummyError,
 			},
 			wants: wants{
@@ -247,7 +295,6 @@ func Test_WithBadRequestHandler(t *testing.T) {
 				errs: []error{nil},
 			},
 			calls: calls{
-				ctx: context.TODO(),
 				err: dummyError,
 			},
 			wants: wants{
@@ -261,7 +308,6 @@ func Test_WithBadRequestHandler(t *testing.T) {
 				errs: []error{dummyError},
 			},
 			calls: calls{
-				ctx: context.TODO(),
 				err: dummyError2,
 			},
 			wants: wants{
@@ -274,10 +320,10 @@ func Test_WithBadRequestHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			opt := WithBadRequestHandler(tt.args.errs...)
-			var config ErrorHandlerConifg
-			opt(&config)
+			var config ErrorHandlerConfig
+			opt.Apply(&config)
 
-			got, ok := config.Handlers()[0](tt.calls.ctx, tt.calls.err)
+			got, ok := config.Handlers()[0](context.Background(), tt.calls.err)
 			assert.Equal(t, tt.wants.result, got, "result")
 			assert.Equal(t, tt.wants.ok, ok, "ok")
 		})
@@ -292,7 +338,6 @@ func Test_WithUnauthorizedHandler(t *testing.T) {
 		errs []error
 	}
 	type calls struct {
-		ctx context.Context
 		err error
 	}
 	type wants struct {
@@ -312,7 +357,6 @@ func Test_WithUnauthorizedHandler(t *testing.T) {
 				errs: []error{dummyError, dummyError2},
 			},
 			calls: calls{
-				ctx: context.TODO(),
 				err: dummyError,
 			},
 			wants: wants{
@@ -326,7 +370,6 @@ func Test_WithUnauthorizedHandler(t *testing.T) {
 				errs: []error{nil},
 			},
 			calls: calls{
-				ctx: context.TODO(),
 				err: dummyError,
 			},
 			wants: wants{
@@ -340,7 +383,6 @@ func Test_WithUnauthorizedHandler(t *testing.T) {
 				errs: []error{dummyError},
 			},
 			calls: calls{
-				ctx: context.TODO(),
 				err: dummyError2,
 			},
 			wants: wants{
@@ -353,10 +395,10 @@ func Test_WithUnauthorizedHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			opt := WithUnauthorizedHandler(tt.args.errs...)
-			var config ErrorHandlerConifg
-			opt(&config)
+			var config ErrorHandlerConfig
+			opt.Apply(&config)
 
-			got, ok := config.Handlers()[0](tt.calls.ctx, tt.calls.err)
+			got, ok := config.Handlers()[0](context.Background(), tt.calls.err)
 			assert.Equal(t, tt.wants.result, got, "result")
 			assert.Equal(t, tt.wants.ok, ok, "ok")
 		})

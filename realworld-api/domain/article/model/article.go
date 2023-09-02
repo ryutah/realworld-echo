@@ -17,6 +17,12 @@ func (a ArticleSlice) Slugs() []Slug {
 	})
 }
 
+func (a ArticleSlice) Authors() []authmodel.UserID {
+	return lo.Map(a, func(item Article, _ int) authmodel.UserID {
+		return item.Author
+	})
+}
+
 type Article struct {
 	Slug      Slug `validate:"required"`
 	Tags      []TagName

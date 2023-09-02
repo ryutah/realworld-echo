@@ -92,7 +92,7 @@ func (a *Article) Save(ctx context.Context, article model.Article) error {
 	}); err != nil {
 		return err
 	}
-	panic("not implemented") // TODO: Implement
+	return nil
 }
 
 func (a *Article) Search(_ context.Context, _ repository.ArticleSearchParam) (model.ArticleSlice, error) {

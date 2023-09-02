@@ -28,5 +28,6 @@ type Account struct {
 
 type Profile struct {
 	Username premitive.Name
+	Bio      premitive.ShortText
 	Image    premitive.URL
 }

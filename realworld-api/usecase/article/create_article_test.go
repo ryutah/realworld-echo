@@ -43,9 +43,9 @@ func TestCreateArticle_Create(t *testing.T) {
 		bulkSave_returns_error error
 	}
 	type mock_errorHandler struct {
-		handle_args_error       error
-		handle_args_opts_length int
-		handle_returns_result   *usecase.Result[CreateArticleResult]
+		handle_args_error     error
+		handler_args_opts     []usecase.ErrorHandlerOption
+		handle_returns_result *usecase.Result[CreateArticleResult]
 	}
 	type mocks struct {
 		articleRepository mock_articleRepository
@@ -177,9 +177,11 @@ func TestCreateArticle_Create(t *testing.T) {
 					generateID_returns_slug: testData1.mocks.articleRepository.generateID_returns_slug,
 				},
 				errorHandler: mock_errorHandler{
-					handle_args_error:       derrors.Errors.Validation.Err,
-					handle_args_opts_length: 1,
-					handle_returns_result:   badRequestFailResult,
+					handle_args_error: derrors.Errors.Validation.Err,
+					handler_args_opts: []usecase.ErrorHandlerOption{
+						usecase.WithBadRequestHandler(derrors.Errors.Validation.Err),
+					},
+					handle_returns_result: badRequestFailResult,
 				},
 			},
 			want: badRequestFailResult,
@@ -201,9 +203,11 @@ func TestCreateArticle_Create(t *testing.T) {
 					currentUser_returns_error: derrors.Errors.NotAuthorized.Err,
 				},
 				errorHandler: mock_errorHandler{
-					handle_args_error:       derrors.Errors.NotAuthorized.Err,
-					handle_args_opts_length: 1,
-					handle_returns_result:   unauthorizedFailResult,
+					handle_args_error: derrors.Errors.NotAuthorized.Err,
+					handler_args_opts: []usecase.ErrorHandlerOption{
+						usecase.WithUnauthorizedHandler(derrors.Errors.NotAuthorized.Err),
+					},
+					handle_returns_result: unauthorizedFailResult,
 				},
 			},
 			want: unauthorizedFailResult,
@@ -226,9 +230,11 @@ func TestCreateArticle_Create(t *testing.T) {
 					currentUser_returns_error: dummyError,
 				},
 				errorHandler: mock_errorHandler{
-					handle_args_error:       dummyError,
-					handle_args_opts_length: 1,
-					handle_returns_result:   internalErrorFailResult,
+					handle_args_error: dummyError,
+					handler_args_opts: []usecase.ErrorHandlerOption{
+						usecase.WithUnauthorizedHandler(derrors.Errors.NotAuthorized.Err),
+					},
+					handle_returns_result: internalErrorFailResult,
 				},
 			},
 			want: internalErrorFailResult,
@@ -252,9 +258,8 @@ func TestCreateArticle_Create(t *testing.T) {
 					generateID_returns_error: dummyError,
 				},
 				errorHandler: mock_errorHandler{
-					handle_args_error:       dummyError,
-					handle_args_opts_length: 0,
-					handle_returns_result:   internalErrorFailResult,
+					handle_args_error:     dummyError,
+					handle_returns_result: internalErrorFailResult,
 				},
 			},
 			want: internalErrorFailResult,
@@ -281,9 +286,8 @@ func TestCreateArticle_Create(t *testing.T) {
 					bulkSave_returns_error: dummyError,
 				},
 				errorHandler: mock_errorHandler{
-					handle_args_error:       dummyError,
-					handle_args_opts_length: 0,
-					handle_returns_result:   internalErrorFailResult,
+					handle_args_error:     dummyError,
+					handle_returns_result: internalErrorFailResult,
 				},
 			},
 			want: internalErrorFailResult,
@@ -307,9 +311,8 @@ func TestCreateArticle_Create(t *testing.T) {
 					save_returns_error:      dummyError,
 				},
 				errorHandler: mock_errorHandler{
-					handle_args_error:       dummyError,
-					handle_args_opts_length: 0,
-					handle_returns_result:   internalErrorFailResult,
+					handle_args_error:     dummyError,
+					handle_returns_result: internalErrorFailResult,
 				},
 			},
 			want: internalErrorFailResult,
@@ -362,9 +365,9 @@ func TestCreateArticle_Create(t *testing.T) {
 			}
 			if tt.configs.errorHandler_handle_should_call {
 				errorHandlerExpectations(t, errorHandler, errorHandlerExpectationsOption[CreateArticleResult]{
-					HandleArgsError:      tt.mocks.errorHandler.handle_args_error,
-					HandleArgsOptsLength: tt.mocks.errorHandler.handle_args_opts_length,
-					HandleReturnsResult:  tt.mocks.errorHandler.handle_returns_result,
+					HandleArgsError:     tt.mocks.errorHandler.handle_args_error,
+					HandleArgsOpts:      tt.mocks.errorHandler.handler_args_opts,
+					HandleReturnsResult: tt.mocks.errorHandler.handle_returns_result,
 				})
 			}
 

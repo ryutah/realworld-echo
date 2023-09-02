@@ -24,9 +24,10 @@ type (
 		Offset      uint
 	}
 	ListArticleResultArtile struct {
-		Aritcle   model.Article
-		Favorites model.FavoriteSlice
-		Favorited bool
+		Aritcle         model.Article
+		Favorites       model.FavoriteSlice
+		Favorited       bool
+		AuthorFollowing bool
 	}
 	ListArticleResult struct {
 		Articles []ListArticleResultArtile
@@ -41,6 +42,7 @@ type ListArticle struct {
 	repository   struct {
 		article  repository.Article
 		favorite repository.Favorite
+		follow   repository.Follow
 	}
 	service struct {
 		auth service.Auth
@@ -51,6 +53,7 @@ func NewListArticle(
 	errorHandler usecase.ErrorHandler[ListArticleResult],
 	articleRepo repository.Article,
 	favoriteRepo repository.Favorite,
+	followRepo repository.Follow,
 	authService service.Auth,
 ) ListArticleInputPort {
 	return &ListArticle{
@@ -58,9 +61,11 @@ func NewListArticle(
 		repository: struct {
 			article  repository.Article
 			favorite repository.Favorite
+			follow   repository.Follow
 		}{
 			article:  articleRepo,
 			favorite: favoriteRepo,
+			follow:   followRepo,
 		},
 		service: struct {
 			auth service.Auth
@@ -94,19 +99,32 @@ func (a *ListArticle) List(ctx context.Context, param ListArticleParam) *usecase
 		return a.errorHandler.Handle(ctx, err)
 	}
 
-	return usecase.Success(a.generateResult(articles, favorites, user))
+	var follows model.FollowersExistsMap
+	if user != nil {
+		follows, err = a.repository.follow.ExistsList(ctx, user.ID, articles.Authors()...)
+		if err != nil {
+			return a.errorHandler.Handle(ctx, err)
+		}
+	}
+
+	return usecase.Success(a.generateResult(articles, favorites, follows, user))
 }
 
-func (a *ListArticle) generateResult(articles model.ArticleSlice, favorites model.FavoriteSliceMap, user *authmodel.User) ListArticleResult {
+func (a *ListArticle) generateResult(articles model.ArticleSlice, favorites model.FavoriteSliceMap, follows model.FollowersExistsMap, user *authmodel.User) ListArticleResult {
 	artileResults := lo.Map(articles, func(item model.Article, _ int) ListArticleResultArtile {
-		var favorited bool
+		var (
+			favorited bool
+			following bool
+		)
 		if user != nil {
 			favorited = favorites[item.Slug].IsFavorited(user.ID, item.Slug)
+			following = follows.IsFollowing(item.Author)
 		}
 		return ListArticleResultArtile{
-			Aritcle:   item,
-			Favorites: favorites[item.Slug],
-			Favorited: favorited,
+			Aritcle:         item,
+			Favorites:       favorites[item.Slug],
+			Favorited:       favorited,
+			AuthorFollowing: following,
 		}
 	})
 	return ListArticleResult{
