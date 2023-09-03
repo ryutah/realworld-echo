@@ -37,9 +37,13 @@ func Test_ListArticle_List(t *testing.T) {
 		search_results_error           error
 	}
 	type mocks_favoriteRepository struct {
-		listBySlugs_args_slugs        []model.Slug
-		listBySlugs_returns_favorites model.FavoriteSliceMap
-		listBySlugs_returns_error     error
+		countList_args_slugs      []model.Slug
+		countList_returns_counts  model.FavoriteCountMap
+		countList_returns_error   error
+		existsList_args_userID    authmodel.UserID
+		existsList_args_slugs     []model.Slug
+		existsList_returns_exists model.FavoriteExistsMap
+		existsList_returns_error  error
 	}
 	type mocks_followRepository struct {
 		existsList_args_followedBy            authmodel.UserID
@@ -62,11 +66,12 @@ func Test_ListArticle_List(t *testing.T) {
 		result *usecase.Result[ListArticleResult]
 	}
 	type configs struct {
-		errorHandler_handle_should_be_called   bool
-		article_search_should_be_skipped       bool
-		favorite_listBySlugs_should_be_skipped bool
-		follow_listBySlugs_should_be_skipped   bool
-		auth_currentUser_should_be_skipped     bool
+		errorHandler_handle_should_be_called  bool
+		article_search_should_be_skipped      bool
+		favorite_countList_should_be_skipped  bool
+		favorite_existsList_should_be_skipped bool
+		follow_existsList_should_be_skipped   bool
+		auth_currentUser_should_be_skipped    bool
 	}
 
 	var (
@@ -81,7 +86,6 @@ func Test_ListArticle_List(t *testing.T) {
 		slug1, _  = model.NewSlug(uuid.New().String())
 		slug2, _  = model.NewSlug(uuid.New().String())
 		user1     = authmodel.UserID("user1")
-		user2     = authmodel.UserID("user2")
 		author1   = model.UserProfile{ID: "author1"}
 		author2   = model.UserProfile{ID: "author2"}
 		testData1 = struct {
@@ -113,17 +117,20 @@ func Test_ListArticle_List(t *testing.T) {
 					},
 				},
 				favoriteRepository: mocks_favoriteRepository{
-					listBySlugs_args_slugs: []model.Slug{
+					countList_args_slugs: []model.Slug{
 						slug1, slug2,
 					},
-					listBySlugs_returns_favorites: model.FavoriteSliceMap{
-						slug1: model.FavoriteSlice{
-							{ArticleSlug: slug1, UserID: user1},
-							{ArticleSlug: slug2, UserID: user2},
-						},
-						slug2: model.FavoriteSlice{
-							{ArticleSlug: slug2, UserID: user1},
-						},
+					countList_returns_counts: model.FavoriteCountMap{
+						slug1: 2,
+						slug2: 1,
+					},
+					existsList_args_userID: user1,
+					existsList_args_slugs: []model.Slug{
+						slug1, slug2,
+					},
+					existsList_returns_exists: model.FavoriteExistsMap{
+						slug1: true,
+						slug2: true,
 					},
 				},
 				followRepository: mocks_followRepository{
@@ -144,19 +151,14 @@ func Test_ListArticle_List(t *testing.T) {
 				result: usecase.Success[ListArticleResult](ListArticleResult{
 					Articles: []ListArticleResultArtile{
 						{
-							Aritcle: model.Article{Slug: slug1, Author: author1},
-							Favorites: model.FavoriteSlice{
-								{ArticleSlug: slug1, UserID: user1},
-								{ArticleSlug: slug2, UserID: user2},
-							},
+							Aritcle:         model.Article{Slug: slug1, Author: author1},
+							FavoriteCount:   2,
 							Favorited:       true,
 							AuthorFollowing: true,
 						},
 						{
-							Aritcle: model.Article{Slug: slug2, Author: author2},
-							Favorites: model.FavoriteSlice{
-								{ArticleSlug: slug2, UserID: user1},
-							},
+							Aritcle:         model.Article{Slug: slug2, Author: author2},
+							FavoriteCount:   1,
 							Favorited:       true,
 							AuthorFollowing: false,
 						},
@@ -199,16 +201,17 @@ func Test_ListArticle_List(t *testing.T) {
 						testData1.wants.result.Success().Articles,
 						func(a ListArticleResultArtile, _ int) ListArticleResultArtile {
 							return ListArticleResultArtile{
-								Aritcle:   a.Aritcle,
-								Favorites: a.Favorites,
-								Favorited: false,
+								Aritcle:       a.Aritcle,
+								FavoriteCount: a.FavoriteCount,
+								Favorited:     false,
 							}
 						},
 					),
 				}),
 			},
 			configs: configs{
-				follow_listBySlugs_should_be_skipped: true,
+				favorite_existsList_should_be_skipped: true,
+				follow_existsList_should_be_skipped:   true,
 			},
 		},
 		{
@@ -220,8 +223,11 @@ func Test_ListArticle_List(t *testing.T) {
 					search_retunrs_articles:        []model.Article{},
 				},
 				favoriteRepository: mocks_favoriteRepository{
-					listBySlugs_args_slugs:        []model.Slug{},
-					listBySlugs_returns_favorites: model.FavoriteSliceMap{},
+					countList_args_slugs:      []model.Slug{},
+					countList_returns_counts:  model.FavoriteCountMap{},
+					existsList_args_userID:    testData1.mocks.favoriteRepository.existsList_args_userID,
+					existsList_args_slugs:     []model.Slug{},
+					existsList_returns_exists: model.FavoriteExistsMap{},
 				},
 				followRepository: mocks_followRepository{
 					existsList_args_followedBy:            testData1.mocks.followRepository.existsList_args_followedBy,
@@ -257,11 +263,12 @@ func Test_ListArticle_List(t *testing.T) {
 				result: badrequestResult,
 			},
 			configs: configs{
-				errorHandler_handle_should_be_called:   true,
-				article_search_should_be_skipped:       true,
-				favorite_listBySlugs_should_be_skipped: true,
-				follow_listBySlugs_should_be_skipped:   true,
-				auth_currentUser_should_be_skipped:     true,
+				errorHandler_handle_should_be_called:  true,
+				article_search_should_be_skipped:      true,
+				favorite_countList_should_be_skipped:  true,
+				favorite_existsList_should_be_skipped: true,
+				follow_existsList_should_be_skipped:   true,
+				auth_currentUser_should_be_skipped:    true,
 			},
 		},
 		{
@@ -281,14 +288,15 @@ func Test_ListArticle_List(t *testing.T) {
 				result: internalErrorResult,
 			},
 			configs: configs{
-				errorHandler_handle_should_be_called:   true,
-				favorite_listBySlugs_should_be_skipped: true,
-				follow_listBySlugs_should_be_skipped:   true,
-				auth_currentUser_should_be_skipped:     true,
+				errorHandler_handle_should_be_called:  true,
+				favorite_countList_should_be_skipped:  true,
+				favorite_existsList_should_be_skipped: true,
+				follow_existsList_should_be_skipped:   true,
+				auth_currentUser_should_be_skipped:    true,
 			},
 		},
 		{
-			name: "favorite_repository_listBySlugs_failed_should_returns_failed_result",
+			name: "favorite_repository_countList_failed_should_returns_failed_result",
 			args: testData1.args,
 			mocks: mocks{
 				errorHandler: mocks_errorHandler{
@@ -297,17 +305,18 @@ func Test_ListArticle_List(t *testing.T) {
 				},
 				articleRepository: testData1.mocks.articleRepository,
 				favoriteRepository: mocks_favoriteRepository{
-					listBySlugs_args_slugs:    testData1.mocks.favoriteRepository.listBySlugs_args_slugs,
-					listBySlugs_returns_error: dummyError,
+					countList_args_slugs:    testData1.mocks.favoriteRepository.countList_args_slugs,
+					countList_returns_error: dummyError,
 				},
 			},
 			wants: wants{
 				result: internalErrorResult,
 			},
 			configs: configs{
-				errorHandler_handle_should_be_called: true,
-				follow_listBySlugs_should_be_skipped: true,
-				auth_currentUser_should_be_skipped:   true,
+				errorHandler_handle_should_be_called:  true,
+				favorite_existsList_should_be_skipped: true,
+				follow_existsList_should_be_skipped:   true,
+				auth_currentUser_should_be_skipped:    true,
 			},
 		},
 		{
@@ -328,8 +337,35 @@ func Test_ListArticle_List(t *testing.T) {
 				result: internalErrorResult,
 			},
 			configs: configs{
+				errorHandler_handle_should_be_called:  true,
+				favorite_existsList_should_be_skipped: true,
+				follow_existsList_should_be_skipped:   true,
+			},
+		},
+		{
+			name: "favorite_repository_existsList_failed_should_returns_failed_result",
+			args: testData1.args,
+			mocks: mocks{
+				errorHandler: mocks_errorHandler{
+					handle_args_error:     dummyError,
+					handle_returns_result: internalErrorResult,
+				},
+				articleRepository: testData1.mocks.articleRepository,
+				favoriteRepository: mocks_favoriteRepository{
+					countList_args_slugs:     testData1.mocks.favoriteRepository.countList_args_slugs,
+					countList_returns_error:  testData1.mocks.favoriteRepository.countList_returns_error,
+					existsList_args_userID:   testData1.mocks.favoriteRepository.existsList_args_userID,
+					existsList_args_slugs:    testData1.mocks.favoriteRepository.existsList_args_slugs,
+					existsList_returns_error: dummyError,
+				},
+				authService: testData1.mocks.authService,
+			},
+			wants: wants{
+				result: internalErrorResult,
+			},
+			configs: configs{
 				errorHandler_handle_should_be_called: true,
-				follow_listBySlugs_should_be_skipped: true,
+				follow_existsList_should_be_skipped:  true,
 			},
 		},
 		{
@@ -383,15 +419,15 @@ func Test_ListArticle_List(t *testing.T) {
 						tt.mocks.articleRepository.search_results_error,
 					)
 			}
-			if !tt.configs.favorite_listBySlugs_should_be_skipped {
+			if !tt.configs.favorite_countList_should_be_skipped {
 				favoriteRepository.EXPECT().
-					ListBySlugs(
+					CountList(
 						mock.Anything,
-						lo.ToAnySlice(tt.mocks.favoriteRepository.listBySlugs_args_slugs)...,
+						lo.ToAnySlice(tt.mocks.favoriteRepository.countList_args_slugs)...,
 					).
 					Return(
-						tt.mocks.favoriteRepository.listBySlugs_returns_favorites,
-						tt.mocks.favoriteRepository.listBySlugs_returns_error,
+						tt.mocks.favoriteRepository.countList_returns_counts,
+						tt.mocks.favoriteRepository.countList_returns_error,
 					)
 			}
 			if !tt.configs.auth_currentUser_should_be_skipped {
@@ -402,7 +438,19 @@ func Test_ListArticle_List(t *testing.T) {
 						tt.mocks.authService.currentUser_returns_err,
 					)
 			}
-			if !tt.configs.follow_listBySlugs_should_be_skipped {
+			if !tt.configs.favorite_existsList_should_be_skipped {
+				favoriteRepository.EXPECT().
+					ExistsList(
+						mock.Anything,
+						tt.mocks.favoriteRepository.existsList_args_userID,
+						lo.ToAnySlice(tt.mocks.favoriteRepository.countList_args_slugs)...,
+					).
+					Return(
+						tt.mocks.favoriteRepository.existsList_returns_exists,
+						tt.mocks.favoriteRepository.existsList_returns_error,
+					)
+			}
+			if !tt.configs.follow_existsList_should_be_skipped {
 				followRepository.EXPECT().
 					ExistsList(
 						mock.Anything,

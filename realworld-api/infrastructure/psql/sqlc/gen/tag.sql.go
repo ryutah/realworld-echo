@@ -11,6 +11,27 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const BulkCreateTagOrDoNothing = `-- name: BulkCreateTagOrDoNothing :exec
+insert into
+    tag (name, created_at, updated_at)
+select
+    unnest($1::text[]) as name,
+    unnest($2::timestamp[]) as created_at,
+    unnest($3::timestamp[]) as updated_at
+on conflict (name) do nothing
+`
+
+type BulkCreateTagOrDoNothingParams struct {
+	Name      []string           `db:"name"`
+	CreatedAt []pgtype.Timestamp `db:"created_at"`
+	UpdatedAt []pgtype.Timestamp `db:"updated_at"`
+}
+
+func (q *Queries) BulkCreateTagOrDoNothing(ctx context.Context, arg BulkCreateTagOrDoNothingParams) error {
+	_, err := q.db.Exec(ctx, BulkCreateTagOrDoNothing, arg.Name, arg.CreatedAt, arg.UpdatedAt)
+	return err
+}
+
 const CreateOrDoNothingTag = `-- name: CreateOrDoNothingTag :exec
 insert into
     tag (name, created_at, updated_at)

@@ -24,6 +24,157 @@ func (_m *MockQuerier) EXPECT() *MockQuerier_Expecter {
 	return &MockQuerier_Expecter{mock: &_m.Mock}
 }
 
+// BulkCreateTagOrDoNothing provides a mock function with given fields: ctx, arg
+func (_m *MockQuerier) BulkCreateTagOrDoNothing(ctx context.Context, arg gen.BulkCreateTagOrDoNothingParams) error {
+	ret := _m.Called(ctx, arg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gen.BulkCreateTagOrDoNothingParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockQuerier_BulkCreateTagOrDoNothing_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkCreateTagOrDoNothing'
+type MockQuerier_BulkCreateTagOrDoNothing_Call struct {
+	*mock.Call
+}
+
+// BulkCreateTagOrDoNothing is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gen.BulkCreateTagOrDoNothingParams
+func (_e *MockQuerier_Expecter) BulkCreateTagOrDoNothing(ctx interface{}, arg interface{}) *MockQuerier_BulkCreateTagOrDoNothing_Call {
+	return &MockQuerier_BulkCreateTagOrDoNothing_Call{Call: _e.mock.On("BulkCreateTagOrDoNothing", ctx, arg)}
+}
+
+func (_c *MockQuerier_BulkCreateTagOrDoNothing_Call) Run(run func(ctx context.Context, arg gen.BulkCreateTagOrDoNothingParams)) *MockQuerier_BulkCreateTagOrDoNothing_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gen.BulkCreateTagOrDoNothingParams))
+	})
+	return _c
+}
+
+func (_c *MockQuerier_BulkCreateTagOrDoNothing_Call) Return(_a0 error) *MockQuerier_BulkCreateTagOrDoNothing_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockQuerier_BulkCreateTagOrDoNothing_Call) RunAndReturn(run func(context.Context, gen.BulkCreateTagOrDoNothingParams) error) *MockQuerier_BulkCreateTagOrDoNothing_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CountArticleFavorite provides a mock function with given fields: ctx, articleSlug
+func (_m *MockQuerier) CountArticleFavorite(ctx context.Context, articleSlug uuid.UUID) (int64, error) {
+	ret := _m.Called(ctx, articleSlug)
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (int64, error)); ok {
+		return rf(ctx, articleSlug)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) int64); ok {
+		r0 = rf(ctx, articleSlug)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, articleSlug)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockQuerier_CountArticleFavorite_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CountArticleFavorite'
+type MockQuerier_CountArticleFavorite_Call struct {
+	*mock.Call
+}
+
+// CountArticleFavorite is a helper method to define mock.On call
+//   - ctx context.Context
+//   - articleSlug uuid.UUID
+func (_e *MockQuerier_Expecter) CountArticleFavorite(ctx interface{}, articleSlug interface{}) *MockQuerier_CountArticleFavorite_Call {
+	return &MockQuerier_CountArticleFavorite_Call{Call: _e.mock.On("CountArticleFavorite", ctx, articleSlug)}
+}
+
+func (_c *MockQuerier_CountArticleFavorite_Call) Run(run func(ctx context.Context, articleSlug uuid.UUID)) *MockQuerier_CountArticleFavorite_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *MockQuerier_CountArticleFavorite_Call) Return(_a0 int64, _a1 error) *MockQuerier_CountArticleFavorite_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockQuerier_CountArticleFavorite_Call) RunAndReturn(run func(context.Context, uuid.UUID) (int64, error)) *MockQuerier_CountArticleFavorite_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CountListArticleFavorite provides a mock function with given fields: ctx, slugs
+func (_m *MockQuerier) CountListArticleFavorite(ctx context.Context, slugs []uuid.UUID) ([]gen.CountListArticleFavoriteRow, error) {
+	ret := _m.Called(ctx, slugs)
+
+	var r0 []gen.CountListArticleFavoriteRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []uuid.UUID) ([]gen.CountListArticleFavoriteRow, error)); ok {
+		return rf(ctx, slugs)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []uuid.UUID) []gen.CountListArticleFavoriteRow); ok {
+		r0 = rf(ctx, slugs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gen.CountListArticleFavoriteRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []uuid.UUID) error); ok {
+		r1 = rf(ctx, slugs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockQuerier_CountListArticleFavorite_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CountListArticleFavorite'
+type MockQuerier_CountListArticleFavorite_Call struct {
+	*mock.Call
+}
+
+// CountListArticleFavorite is a helper method to define mock.On call
+//   - ctx context.Context
+//   - slugs []uuid.UUID
+func (_e *MockQuerier_Expecter) CountListArticleFavorite(ctx interface{}, slugs interface{}) *MockQuerier_CountListArticleFavorite_Call {
+	return &MockQuerier_CountListArticleFavorite_Call{Call: _e.mock.On("CountListArticleFavorite", ctx, slugs)}
+}
+
+func (_c *MockQuerier_CountListArticleFavorite_Call) Run(run func(ctx context.Context, slugs []uuid.UUID)) *MockQuerier_CountListArticleFavorite_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *MockQuerier_CountListArticleFavorite_Call) Return(_a0 []gen.CountListArticleFavoriteRow, _a1 error) *MockQuerier_CountListArticleFavorite_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockQuerier_CountListArticleFavorite_Call) RunAndReturn(run func(context.Context, []uuid.UUID) ([]gen.CountListArticleFavoriteRow, error)) *MockQuerier_CountListArticleFavorite_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateArticleTag provides a mock function with given fields: ctx, arg
 func (_m *MockQuerier) CreateArticleTag(ctx context.Context, arg []gen.CreateArticleTagParams) (int64, error) {
 	ret := _m.Called(ctx, arg)
@@ -159,6 +310,222 @@ func (_c *MockQuerier_DeleteArticleTagBySlug_Call) Return(_a0 error) *MockQuerie
 }
 
 func (_c *MockQuerier_DeleteArticleTagBySlug_Call) RunAndReturn(run func(context.Context, uuid.UUID) error) *MockQuerier_DeleteArticleTagBySlug_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ExistsArticleFavorite provides a mock function with given fields: ctx, arg
+func (_m *MockQuerier) ExistsArticleFavorite(ctx context.Context, arg gen.ExistsArticleFavoriteParams) (bool, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gen.ExistsArticleFavoriteParams) (bool, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gen.ExistsArticleFavoriteParams) bool); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gen.ExistsArticleFavoriteParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockQuerier_ExistsArticleFavorite_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExistsArticleFavorite'
+type MockQuerier_ExistsArticleFavorite_Call struct {
+	*mock.Call
+}
+
+// ExistsArticleFavorite is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gen.ExistsArticleFavoriteParams
+func (_e *MockQuerier_Expecter) ExistsArticleFavorite(ctx interface{}, arg interface{}) *MockQuerier_ExistsArticleFavorite_Call {
+	return &MockQuerier_ExistsArticleFavorite_Call{Call: _e.mock.On("ExistsArticleFavorite", ctx, arg)}
+}
+
+func (_c *MockQuerier_ExistsArticleFavorite_Call) Run(run func(ctx context.Context, arg gen.ExistsArticleFavoriteParams)) *MockQuerier_ExistsArticleFavorite_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gen.ExistsArticleFavoriteParams))
+	})
+	return _c
+}
+
+func (_c *MockQuerier_ExistsArticleFavorite_Call) Return(_a0 bool, _a1 error) *MockQuerier_ExistsArticleFavorite_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockQuerier_ExistsArticleFavorite_Call) RunAndReturn(run func(context.Context, gen.ExistsArticleFavoriteParams) (bool, error)) *MockQuerier_ExistsArticleFavorite_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ExistsFollow provides a mock function with given fields: ctx, arg
+func (_m *MockQuerier) ExistsFollow(ctx context.Context, arg gen.ExistsFollowParams) (bool, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gen.ExistsFollowParams) (bool, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gen.ExistsFollowParams) bool); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gen.ExistsFollowParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockQuerier_ExistsFollow_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExistsFollow'
+type MockQuerier_ExistsFollow_Call struct {
+	*mock.Call
+}
+
+// ExistsFollow is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gen.ExistsFollowParams
+func (_e *MockQuerier_Expecter) ExistsFollow(ctx interface{}, arg interface{}) *MockQuerier_ExistsFollow_Call {
+	return &MockQuerier_ExistsFollow_Call{Call: _e.mock.On("ExistsFollow", ctx, arg)}
+}
+
+func (_c *MockQuerier_ExistsFollow_Call) Run(run func(ctx context.Context, arg gen.ExistsFollowParams)) *MockQuerier_ExistsFollow_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gen.ExistsFollowParams))
+	})
+	return _c
+}
+
+func (_c *MockQuerier_ExistsFollow_Call) Return(_a0 bool, _a1 error) *MockQuerier_ExistsFollow_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockQuerier_ExistsFollow_Call) RunAndReturn(run func(context.Context, gen.ExistsFollowParams) (bool, error)) *MockQuerier_ExistsFollow_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ExistsListArtileFavorite provides a mock function with given fields: ctx, arg
+func (_m *MockQuerier) ExistsListArtileFavorite(ctx context.Context, arg gen.ExistsListArtileFavoriteParams) ([]gen.ExistsListArtileFavoriteRow, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 []gen.ExistsListArtileFavoriteRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gen.ExistsListArtileFavoriteParams) ([]gen.ExistsListArtileFavoriteRow, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gen.ExistsListArtileFavoriteParams) []gen.ExistsListArtileFavoriteRow); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gen.ExistsListArtileFavoriteRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gen.ExistsListArtileFavoriteParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockQuerier_ExistsListArtileFavorite_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExistsListArtileFavorite'
+type MockQuerier_ExistsListArtileFavorite_Call struct {
+	*mock.Call
+}
+
+// ExistsListArtileFavorite is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gen.ExistsListArtileFavoriteParams
+func (_e *MockQuerier_Expecter) ExistsListArtileFavorite(ctx interface{}, arg interface{}) *MockQuerier_ExistsListArtileFavorite_Call {
+	return &MockQuerier_ExistsListArtileFavorite_Call{Call: _e.mock.On("ExistsListArtileFavorite", ctx, arg)}
+}
+
+func (_c *MockQuerier_ExistsListArtileFavorite_Call) Run(run func(ctx context.Context, arg gen.ExistsListArtileFavoriteParams)) *MockQuerier_ExistsListArtileFavorite_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gen.ExistsListArtileFavoriteParams))
+	})
+	return _c
+}
+
+func (_c *MockQuerier_ExistsListArtileFavorite_Call) Return(_a0 []gen.ExistsListArtileFavoriteRow, _a1 error) *MockQuerier_ExistsListArtileFavorite_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockQuerier_ExistsListArtileFavorite_Call) RunAndReturn(run func(context.Context, gen.ExistsListArtileFavoriteParams) ([]gen.ExistsListArtileFavoriteRow, error)) *MockQuerier_ExistsListArtileFavorite_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ExistsListFollow provides a mock function with given fields: ctx, arg
+func (_m *MockQuerier) ExistsListFollow(ctx context.Context, arg gen.ExistsListFollowParams) ([]gen.ExistsListFollowRow, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 []gen.ExistsListFollowRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gen.ExistsListFollowParams) ([]gen.ExistsListFollowRow, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gen.ExistsListFollowParams) []gen.ExistsListFollowRow); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gen.ExistsListFollowRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gen.ExistsListFollowParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockQuerier_ExistsListFollow_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExistsListFollow'
+type MockQuerier_ExistsListFollow_Call struct {
+	*mock.Call
+}
+
+// ExistsListFollow is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gen.ExistsListFollowParams
+func (_e *MockQuerier_Expecter) ExistsListFollow(ctx interface{}, arg interface{}) *MockQuerier_ExistsListFollow_Call {
+	return &MockQuerier_ExistsListFollow_Call{Call: _e.mock.On("ExistsListFollow", ctx, arg)}
+}
+
+func (_c *MockQuerier_ExistsListFollow_Call) Run(run func(ctx context.Context, arg gen.ExistsListFollowParams)) *MockQuerier_ExistsListFollow_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gen.ExistsListFollowParams))
+	})
+	return _c
+}
+
+func (_c *MockQuerier_ExistsListFollow_Call) Return(_a0 []gen.ExistsListFollowRow, _a1 error) *MockQuerier_ExistsListFollow_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockQuerier_ExistsListFollow_Call) RunAndReturn(run func(context.Context, gen.ExistsListFollowParams) ([]gen.ExistsListFollowRow, error)) *MockQuerier_ExistsListFollow_Call {
 	_c.Call.Return(run)
 	return _c
 }

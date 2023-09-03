@@ -38,3 +38,15 @@ func (f FavoriteSlice) IsFavorited(userID authmodel.UserID, slug Slug) bool {
 }
 
 type FavoriteSliceMap map[Slug]FavoriteSlice
+
+type FavoriteCountMap map[Slug]int
+
+func (f FavoriteCountMap) Count(slug Slug) int {
+	return f[slug]
+}
+
+type FavoriteExistsMap map[Slug]bool
+
+func (f FavoriteExistsMap) Exists(slug Slug) bool {
+	return f[slug]
+}

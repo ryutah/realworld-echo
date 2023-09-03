@@ -9,7 +9,9 @@ import (
 	"github.com/samber/lo"
 )
 
-type Follow struct{}
+type Follow struct {
+	repository.Follow
+}
 
 var _ repository.Follow = (*Follow)(nil)
 

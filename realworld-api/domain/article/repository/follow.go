@@ -8,5 +8,6 @@ import (
 )
 
 type Follow interface {
+	Exists(ctx context.Context, followedBy authmodel.UserID, following authmodel.UserID) (bool, error)
 	ExistsList(ctx context.Context, followedBy authmodel.UserID, following ...authmodel.UserID) (model.FollowersExistsMap, error)
 }

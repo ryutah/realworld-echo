@@ -126,6 +126,50 @@ func (_c *MockDBManager_ContextWithExecutor_Call) RunAndReturn(run func(context.
 	return _c
 }
 
+// Executor provides a mock function with given fields: ctx
+func (_m *MockDBManager) Executor(ctx context.Context) sqlc.ContextExecutor {
+	ret := _m.Called(ctx)
+
+	var r0 sqlc.ContextExecutor
+	if rf, ok := ret.Get(0).(func(context.Context) sqlc.ContextExecutor); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(sqlc.ContextExecutor)
+		}
+	}
+
+	return r0
+}
+
+// MockDBManager_Executor_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Executor'
+type MockDBManager_Executor_Call struct {
+	*mock.Call
+}
+
+// Executor is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockDBManager_Expecter) Executor(ctx interface{}) *MockDBManager_Executor_Call {
+	return &MockDBManager_Executor_Call{Call: _e.mock.On("Executor", ctx)}
+}
+
+func (_c *MockDBManager_Executor_Call) Run(run func(ctx context.Context)) *MockDBManager_Executor_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockDBManager_Executor_Call) Return(_a0 sqlc.ContextExecutor) *MockDBManager_Executor_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockDBManager_Executor_Call) RunAndReturn(run func(context.Context) sqlc.ContextExecutor) *MockDBManager_Executor_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Querier provides a mock function with given fields: _a0
 func (_m *MockDBManager) Querier(_a0 context.Context) gen.Querier {
 	ret := _m.Called(_a0)

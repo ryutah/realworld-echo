@@ -18,6 +18,7 @@ type ContextExecutor interface {
 
 type DBManager interface {
 	Querier(context.Context) gen.Querier
+	Executor(ctx context.Context) ContextExecutor
 	ContextWithExecutor(context.Context, ContextExecutor) context.Context
 	BeginTx(context.Context, pgx.TxOptions) (pgx.Tx, error)
 }

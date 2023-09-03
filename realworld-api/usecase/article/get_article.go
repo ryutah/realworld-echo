@@ -17,7 +17,7 @@ type (
 	GetArticleResult struct {
 		Article         model.Article
 		Favorited       bool
-		Favorites       model.FavoriteSlice
+		FavoriteCount   int
 		FollowingAuthor bool
 	}
 	GetArticleInputPort interface {
@@ -77,7 +77,7 @@ func (a *GetArticle) Get(ctx context.Context, slugStr string) *usecase.Result[Ge
 		return a.errorHandler.Handle(ctx, err, usecase.WithNotFoundHandler(derrors.Errors.NotFound.Err))
 	}
 
-	favorites, err := a.repository.favorites.ListBySlug(ctx, article.Slug)
+	favoriteCount, err := a.repository.favorites.Count(ctx, article.Slug)
 	if err != nil {
 		return a.errorHandler.Handle(ctx, err)
 	}
@@ -85,22 +85,26 @@ func (a *GetArticle) Get(ctx context.Context, slugStr string) *usecase.Result[Ge
 	user, err := a.service.auth.CurrentUser(ctx)
 	if errors.Is(err, derrors.Errors.NotAuthorized.Err) {
 		return usecase.Success(GetArticleResult{
-			Article:   *article,
-			Favorited: false,
-			Favorites: favorites,
+			Article:       *article,
+			Favorited:     false,
+			FavoriteCount: favoriteCount,
 		})
 	} else if err != nil {
 		return a.errorHandler.Handle(ctx, err)
 	}
 
-	follows, err := a.repository.follow.ExistsList(ctx, user.ID, article.Author.ID)
+	favorited, err := a.repository.favorites.Exists(ctx, user.ID, article.Slug)
+	if err != nil {
+		return a.errorHandler.Handle(ctx, err)
+	}
+	following, err := a.repository.follow.Exists(ctx, user.ID, article.Author.ID)
 	if err != nil {
 		return a.errorHandler.Handle(ctx, err)
 	}
 	return usecase.Success(GetArticleResult{
 		Article:         *article,
-		Favorited:       favorites.IsFavorited(user.ID, article.Slug),
-		Favorites:       favorites,
-		FollowingAuthor: follows.IsFollowing(article.Author.ID),
+		Favorited:       favorited,
+		FavoriteCount:   favoriteCount,
+		FollowingAuthor: following,
 	})
 }

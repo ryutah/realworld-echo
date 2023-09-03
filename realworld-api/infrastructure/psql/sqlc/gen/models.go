@@ -61,10 +61,20 @@ type ArticleTag struct {
 	UpdatedAt pgtype.Timestamptz `db:"updated_at"`
 }
 
+// フォロー
+type Follow struct {
+	// ユーザID
+	UserID string `db:"user_id"`
+	// フォロワーユーザID
+	FollwerID string             `db:"follwer_id"`
+	CreatedAt pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at"`
+}
+
 // ユーザ情報
 type Profile struct {
 	// ユーザID
-	UserID uuid.UUID `db:"user_id"`
+	UserID string `db:"user_id"`
 	// 自己紹介
 	Bio       sql.NullString     `db:"bio"`
 	CreatedAt pgtype.Timestamptz `db:"created_at"`

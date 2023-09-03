@@ -3,6 +3,7 @@ package sqlc
 import (
 	"context"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -20,20 +21,34 @@ import (
 type Article struct {
 	transaction transaction.Transaction
 	manager     DBManager
-	repository  struct {
+	selector    struct {
+		articles RawSelector[gen.Article]
+	}
+	repository struct {
 		user authrepo.User
 	}
 }
 
 var _ repository.Article = (*Article)(nil)
 
-func NewArtile(manager DBManager, userRepo authrepo.User) *Article {
+func NewArtile(
+	manager DBManager,
+	transaction transaction.Transaction,
+	userRepo authrepo.User,
+	articleSelector RawSelector[gen.Article],
+) *Article {
 	return &Article{
-		manager: manager,
+		manager:     manager,
+		transaction: transaction,
 		repository: struct {
 			user authrepo.User
 		}{
 			user: userRepo,
+		},
+		selector: struct {
+			articles RawSelector[gen.Article]
+		}{
+			articles: articleSelector,
 		},
 	}
 }
@@ -97,6 +112,8 @@ func (a *Article) Save(ctx context.Context, article model.Article) error {
 			return gen.CreateArticleTagParams{
 				ArticleSlug: slug,
 				TagName:     item.String(),
+				CreatedAt:   toTimestamptz(article.CreatedAt.Time()),
+				UpdatedAt:   toTimestamptz(article.UpdatedAt.Time()),
 			}
 		})
 		if _, err := q.CreateArticleTag(ctx, params); err != nil {
@@ -109,8 +126,71 @@ func (a *Article) Save(ctx context.Context, article model.Article) error {
 	return nil
 }
 
-func (a *Article) Search(_ context.Context, _ repository.ArticleSearchParam) (model.ArticleSlice, error) {
-	panic("not implemented") // TODO: Implement
+type articleSearchParam repository.ArticleSearchParam
+
+func (a articleSearchParam) condition() squirrel.Eq {
+	eqCond := make(squirrel.Eq)
+	if a.Author != nil {
+		eqCond["a.author"] = a.Author.String()
+	}
+	if a.FavoritedBy != nil {
+		eqCond["f.user_id"] = a.FavoritedBy.String()
+	}
+	if a.Tag != nil {
+		eqCond["t.tag_name"] = a.Tag.String()
+	}
+	return eqCond
+}
+
+func (a *Article) Search(ctx context.Context, param repository.ArticleSearchParam) (model.ArticleSlice, error) {
+	p := articleSearchParam(param)
+
+	articles, err := a.selector.articles.Select(
+		ctx, a.manager.Executor(ctx),
+		squirrel.Select("a.*").
+			From("article as a").
+			LeftJoin("article_favorite as f on a.slug = f.article_slug").
+			LeftJoin("article_tag as t on a.slug = t.article_slug").
+			Where(p.condition()).
+			Limit(uint64(param.Limit)).
+			Offset(uint64(param.Offset)),
+	)
+	if err != nil {
+		return nil, derrors.NewInternalError(0, err, "failed to select articles")
+	}
+
+	articleTags, err := a.manager.Querier(ctx).ListArticleTags(ctx, lo.Map(articles, func(i gen.Article, _ int) uuid.UUID {
+		return i.Slug
+	}))
+	if err != nil {
+		return nil, derrors.NewInternalError(0, err, "failed to get article_tags")
+	}
+	authors, err := a.repository.user.List(ctx, lo.Map(articles, func(i gen.Article, _ int) authmodel.UserID {
+		return authmodel.UserID(i.Author)
+	})...)
+	if err != nil {
+		return nil, derrors.NewInternalError(0, err, "failed to get authors")
+	}
+
+	return a.reCreateEntities(articles, authors, articleTags)
+}
+
+func (a *Article) reCreateEntities(articles []gen.Article, authors []authmodel.User, tags []gen.ListArticleTagsRow) ([]model.Article, error) {
+	var results []model.Article
+	for _, article := range articles {
+		author, _ := lo.Find(authors, func(i authmodel.User) bool {
+			return article.Author == i.ID.String()
+		})
+		tag := lo.Filter(tags, func(i gen.ListArticleTagsRow, _ int) bool {
+			return article.Slug == i.ArticleSlug
+		})
+		result, err := a.reCreateEntity(article, author, tag)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, *result)
+	}
+	return results, nil
 }
 
 func (a *Article) reCreateEntity(article gen.Article, author authmodel.User, tags []gen.ListArticleTagsRow) (*model.Article, error) {

@@ -25,7 +25,7 @@ type (
 	}
 	ListArticleResultArtile struct {
 		Aritcle         model.Article
-		Favorites       model.FavoriteSlice
+		FavoriteCount   int
 		Favorited       bool
 		AuthorFollowing bool
 	}
@@ -89,41 +89,38 @@ func (a *ListArticle) List(ctx context.Context, param ListArticleParam) *usecase
 		return a.errorHandler.Handle(ctx, err)
 	}
 
-	favorites, err := a.repository.favorite.ListBySlugs(ctx, articles.Slugs()...)
+	favoriteCounts, err := a.repository.favorite.CountList(ctx, articles.Slugs()...)
 	if err != nil {
 		return a.errorHandler.Handle(ctx, err)
 	}
-
 	user, err := a.service.auth.CurrentUser(ctx)
-	if err != nil && !errors.Is(err, derrors.Errors.NotAuthorized.Err) {
+	if errors.Is(err, derrors.Errors.NotAuthorized.Err) {
+		return usecase.Success(a.generateResult(articles, favoriteCounts, nil, nil, nil))
+	} else if err != nil {
 		return a.errorHandler.Handle(ctx, err)
 	}
 
-	var follows model.FollowersExistsMap
-	if user != nil {
-		follows, err = a.repository.follow.ExistsList(ctx, user.ID, articles.Authors()...)
-		if err != nil {
-			return a.errorHandler.Handle(ctx, err)
-		}
+	favorited, err := a.repository.favorite.ExistsList(ctx, user.ID, articles.Slugs()...)
+	if err != nil {
+		return a.errorHandler.Handle(ctx, err)
 	}
-
-	return usecase.Success(a.generateResult(articles, favorites, follows, user))
+	follows, err := a.repository.follow.ExistsList(ctx, user.ID, articles.Authors()...)
+	if err != nil {
+		return a.errorHandler.Handle(ctx, err)
+	}
+	return usecase.Success(a.generateResult(articles, favoriteCounts, favorited, follows, user))
 }
 
-func (a *ListArticle) generateResult(articles model.ArticleSlice, favorites model.FavoriteSliceMap, follows model.FollowersExistsMap, user *authmodel.User) ListArticleResult {
+func (a *ListArticle) generateResult(articles model.ArticleSlice, favoriteCnt model.FavoriteCountMap, favorited model.FavoriteExistsMap, follows model.FollowersExistsMap, user *authmodel.User) ListArticleResult {
 	artileResults := lo.Map(articles, func(item model.Article, _ int) ListArticleResultArtile {
-		var (
-			favorited bool
-			following bool
-		)
+		var following bool
 		if user != nil {
-			favorited = favorites[item.Slug].IsFavorited(user.ID, item.Slug)
 			following = follows.IsFollowing(item.Author.ID)
 		}
 		return ListArticleResultArtile{
 			Aritcle:         item,
-			Favorites:       favorites[item.Slug],
-			Favorited:       favorited,
+			FavoriteCount:   favoriteCnt.Count(item.Slug),
+			Favorited:       favorited.Exists(item.Slug),
 			AuthorFollowing: following,
 		}
 	})

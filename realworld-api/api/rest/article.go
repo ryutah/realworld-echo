@@ -52,13 +52,18 @@ func (a *Article) GetArticles(ctx context.Context, request gen.GetArticlesReques
 		MultipleArticlesResponseJSONResponse: gen.MultipleArticlesResponseJSONResponse{
 			Articles: lo.Map(result.Success().Articles, func(a article.ListArticleResultArtile, _ int) gen.Article {
 				return gen.Article{
-					Slug:           a.Aritcle.Slug.String(),
-					Author:         gen.Profile{},
+					Slug: a.Aritcle.Slug.String(),
+					Author: gen.Profile{
+						Bio:       a.Aritcle.Author.Bio.String(),
+						Following: a.AuthorFollowing,
+						Image:     a.Aritcle.Author.Image.String(),
+						Username:  a.Aritcle.Author.Name.String(),
+					},
 					Title:          a.Aritcle.Contents.Title.String(),
 					Body:           a.Aritcle.Contents.Body.String(),
 					Description:    a.Aritcle.Slug.String(),
 					Favorited:      a.Favorited,
-					FavoritesCount: len(a.Favorites),
+					FavoritesCount: a.FavoriteCount,
 					TagList:        lo.Map(a.Aritcle.Tags, func(t model.TagName, _ int) string { return t.String() }),
 					CreatedAt:      a.Aritcle.CreatedAt.Time(),
 					UpdatedAt:      a.Aritcle.UpdatedAt.Time(),
@@ -74,38 +79,39 @@ func (a *Article) GetArticle(ctx context.Context, request gen.GetArticleRequestO
 	defer span.End()
 	result := a.inputPort.getArticle.Get(ctx, request.Slug)
 
-	if !result.IsFailed() {
-		article := result.Success()
-		return gen.GetArticle200JSONResponse{
-			SingleArticleResponseJSONResponse: gen.SingleArticleResponseJSONResponse{
-				Article: gen.Article{
-					Author: gen.Profile{
-						Bio:       "dummy",
-						Following: false,
-						Image:     "dummy",
-						Username:  "dummy",
+	if result.IsFailed() {
+		return gen.GetArticle422JSONResponse{
+			GenericErrorJSONResponse: gen.GenericErrorJSONResponse{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{
+					Body: []string{
+						result.Fail().Message,
 					},
-					Slug:           article.Article.Slug.String(),
-					Title:          article.Article.Contents.Title.String(),
-					Description:    article.Article.Contents.Description.String(),
-					Body:           article.Article.Contents.Description.String(),
-					Favorited:      false,
-					FavoritesCount: 0,
-					TagList:        []string{},
-					CreatedAt:      article.Article.CreatedAt.Time(),
-					UpdatedAt:      article.Article.UpdatedAt.Time(),
 				},
 			},
 		}, nil
 	}
-	return gen.GetArticle422JSONResponse{
-		GenericErrorJSONResponse: gen.GenericErrorJSONResponse{
-			Errors: struct {
-				Body []string `json:"body"`
-			}{
-				Body: []string{
-					result.Fail().Message,
+
+	article := result.Success()
+	return gen.GetArticle200JSONResponse{
+		SingleArticleResponseJSONResponse: gen.SingleArticleResponseJSONResponse{
+			Article: gen.Article{
+				Author: gen.Profile{
+					Bio:       article.Article.Author.Bio.String(),
+					Following: article.FollowingAuthor,
+					Image:     article.Article.Author.Image.String(),
+					Username:  article.Article.Author.Name.String(),
 				},
+				Slug:           article.Article.Slug.String(),
+				Title:          article.Article.Contents.Title.String(),
+				Description:    article.Article.Contents.Description.String(),
+				Body:           article.Article.Contents.Description.String(),
+				Favorited:      article.Favorited,
+				FavoritesCount: article.FavoriteCount,
+				TagList:        lo.Map(article.Article.Tags, func(t model.TagName, _ int) string { return t.String() }),
+				CreatedAt:      article.Article.CreatedAt.Time(),
+				UpdatedAt:      article.Article.UpdatedAt.Time(),
 			},
 		},
 	}, nil
