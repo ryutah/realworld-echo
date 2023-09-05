@@ -76,7 +76,7 @@ func NewListArticle(
 }
 
 func (a *ListArticle) List(ctx context.Context, param ListArticleParam) *usecase.Result[ListArticleResult] {
-	ctx, finish := operations.StartFunc(ctx)
+	ctx, finish := operations.StartFunc(ctx, operations.FuncParam(param))
 	defer finish()
 
 	searchParam, err := param.toSearchParam()

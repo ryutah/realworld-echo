@@ -1,6 +1,11 @@
 @startuml
 
 ' see: https://plantuml.com/ja-dark/state-diagram
+'
+' ## Rules
+'
+' 1. 状態遷移図だけでなく、状態遷移表も作成して管理する
+'     - 優先順位 : 状態遷移表 > 状態遷移図
 
 title "タスク状態遷移"
 

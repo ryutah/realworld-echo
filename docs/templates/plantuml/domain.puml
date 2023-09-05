@@ -1,11 +1,34 @@
 @startuml
 
 ' see: https://plantuml.com/ja-dark/class-diagram
+'
+' ## Rules
+'
+' 1. 日本語表記と、実際にコーディング等で使用する英語表記を併記する
+'     class ルートエンティティ[RootEntity] <<RootEntity>> {
+'         名前[name]
+'     }
+'
+' 2. フィールド、メソッドの型情報は省略可
+'
+' 3. 要素間の関連性
+'     - `--`
+'         - 通常の関連を表現
+'         - e.g.
+'            - `RootEntity "1" -- "1" Entity`
+'     - `--> : [関連フィールド]`
+'         - エンティティの ID を属性として持っている等の、緩い関連
+'         - e.g.
+'            - `RootEntity2 --> RootEntity : id`
+'     - `..> : user`
+'         - 対象の要素を利用して処理を行うことを示す
+'         - e.g.
+'            - `Service ..> RootEntity : use`
 
 skinparam class {
   BackgroundColor<<RootEntity>> pink
   BackgroundColor<<Entity>> orange
-  BackgroundColor<<VO>> palegreen
+  BackgroundColor<<ValueObject>> palegreen
   BackgroundColor<<Service>> cyan
 }
 hide circle
@@ -14,26 +37,26 @@ hide empty members
 ' 境界付けられたコンテキストを定義する場合は namespace を使用する
 namespace bounded_context {
   class ルートエンティティ[RootEntity]<<RootEntity>> {
-    ' エンティティのキーとなるフィールドには [pk] を付与
-    ' 複合キーの場合複数のフィールドに [pk] を付与
-    id[pk]
+    ' エンティティのキーとなるフィールドには <pk> を付与
+    ' 複合キーの場合複数のフィールドに <pk> を付与
+    id<pk>
     ' 日本語表記[英語表記]
     ' id 等の名称が明確な場合は省略可
     name[名前]
   }
   class Entity<<Entity>> {
-    id[pk]
+    id<pk>
     名前 : name
   }
-  class ValueObject<<VO>> {
+  class ValueObject<<ValueObject>> {
     値 : value
   }
   RootEntity "1" -- "1" Entity
   RootEntity "1" -- "1" ValueObject
 
   class RootEntity2<<RootEntity>> {
-    id[pk]
-    value : 値
+    id<pk>
+    value[値]
   }
   ' ID等による緩い関連は "--> : 関連フィールド" の表記で表現
   RootEntity2 --> RootEntity : id

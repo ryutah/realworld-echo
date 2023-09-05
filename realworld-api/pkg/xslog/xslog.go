@@ -48,16 +48,12 @@ func LoggerFromContext(ctx context.Context) *slog.Logger {
 	return NewLogger()
 }
 
-func ContextWithLogger(ctx context.Context) context.Context {
-	return contextWithLogger(ctx, NewLogger())
-}
-
 func ContextWithAttrs(ctx context.Context, attrs ...slog.Attr) context.Context {
 	logger := LoggerFromContext(ctx)
-	return contextWithLogger(ctx, logger.With(lo.ToAnySlice(attrs)...))
+	return ContextWithLogger(ctx, logger.With(lo.ToAnySlice(attrs)...))
 }
 
-func contextWithLogger(ctx context.Context, logger *slog.Logger) context.Context {
+func ContextWithLogger(ctx context.Context, logger *slog.Logger) context.Context {
 	return context.WithValue(ctx, logKey{}, logger)
 }
 
@@ -69,8 +65,7 @@ func NewLogger() *slog.Logger {
 			if a.Key != slog.LevelKey {
 				return a
 			}
-			switch a.Value.Any().(slog.Level) {
-			case levelAlert:
+			if a.Value.Any().(slog.Level) == levelAlert {
 				a.Value = slog.StringValue("ALERT")
 			}
 			return a

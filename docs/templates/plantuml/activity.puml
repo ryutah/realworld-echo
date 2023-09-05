@@ -1,13 +1,39 @@
 @startuml
 
 ' see: https://plantuml.com/ja-dark/activity-diagram-beta
-' 不明なエラー発生時の Internal Error はアプリケーションロジックとは直接関係ない者であるため省略して記載する
+'
+' ## Rules
+'
+' 1. 不明なエラー発生時の Internal Error はアプリケーションロジックとは直接関係ない者であるため省略して記載
+'     - 検査例外は必ず記載
+'
+' 2. DB 等の外部リソースへのアクセスは note で記述
+'
+'     note right
+'         * output: File
+'         * name: task.csv
+'         * format: csv
+'         ====
+'         * 追加情報
+'     end note
+'
+'     note right
+'         * input: Database
+'         * name: task
+'         ====
+'         * 追加情報
+'     end note
+'
+' 3. 共通処理
+'     - 次のフォーマットで記載
+'         - #cyan:[procedure_name];
+'     - `procedure_name` は、拡張子なしのファイル名
 
 title タスク起票
 
 start
 
-#cyan:ユーザ認可リクエスト共通処理;
+#cyan:common_procedure_user_authorization;
 :Task エンティティ新規作成;
 
 if (入力エラー) then (yes)

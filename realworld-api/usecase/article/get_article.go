@@ -10,7 +10,6 @@ import (
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
 	"github.com/ryutah/realworld-echo/realworld-api/internal/operations"
 	"github.com/ryutah/realworld-echo/realworld-api/usecase"
-	"go.uber.org/zap"
 )
 
 type (
@@ -64,7 +63,7 @@ func NewGetArticle(
 }
 
 func (a *GetArticle) Get(ctx context.Context, slugStr string) *usecase.Result[GetArticleResult] {
-	ctx, finish := operations.StartFunc(ctx, zap.String("slug", slugStr))
+	ctx, finish := operations.StartFunc(ctx, operations.FuncParam(slugStr))
 	defer finish()
 
 	slug, err := model.NewSlug(slugStr)

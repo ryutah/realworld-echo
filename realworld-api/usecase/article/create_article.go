@@ -67,7 +67,7 @@ func NewCreateArticle(
 }
 
 func (c *CreateArticle) Create(ctx context.Context, param CreateArticleParam) *usecase.Result[CreateArticleResult] {
-	ctx, finish := operations.StartFunc(ctx)
+	ctx, finish := operations.StartFunc(ctx, operations.FuncParam(param))
 	defer finish()
 
 	user, err := c.service.auth.CurrentUser(ctx)
