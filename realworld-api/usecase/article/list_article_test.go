@@ -11,9 +11,9 @@ import (
 	"github.com/ryutah/realworld-echo/realworld-api/domain/article/repository"
 	authmodel "github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
-	mock_repository "github.com/ryutah/realworld-echo/realworld-api/internal/mock/article/repository"
-	mock_auth_service "github.com/ryutah/realworld-echo/realworld-api/internal/mock/auth/service"
-	mock_usecase "github.com/ryutah/realworld-echo/realworld-api/internal/mock/usecase"
+	mock_article_repo "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/domain/article/repository"
+	mock_auth_service "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/domain/auth/service"
+	mock_usecase "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/usecase"
 	"github.com/ryutah/realworld-echo/realworld-api/pkg/pointer"
 	"github.com/ryutah/realworld-echo/realworld-api/usecase"
 	. "github.com/ryutah/realworld-echo/realworld-api/usecase/article"
@@ -397,9 +397,9 @@ func Test_ListArticle_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errorHandler := mock_usecase.NewMockErrorHandler[ListArticleResult](t)
-			articleRepository := mock_repository.NewMockArticle(t)
-			favoriteRepository := mock_repository.NewMockFavorite(t)
-			followRepository := mock_repository.NewMockFollow(t)
+			articleRepository := mock_article_repo.NewMockArticle(t)
+			favoriteRepository := mock_article_repo.NewMockFavorite(t)
+			followRepository := mock_article_repo.NewMockFollow(t)
 			authService := mock_auth_service.NewMockAuth(t)
 
 			if tt.configs.errorHandler_handle_should_be_called {

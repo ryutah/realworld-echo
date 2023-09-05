@@ -30,6 +30,7 @@ generate/go: ## run go generate command
 
 .PHONY: generate/mock
 generate/mock: ## run mock generate
+	rm -rf ./internal/mock/gen
 	mockery
 
 .PHONY: generate/sqlc

@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	mock_transaction "github.com/ryutah/realworld-echo/realworld-api/internal/mock/transaction"
-	mock_usecase "github.com/ryutah/realworld-echo/realworld-api/internal/mock/usecase"
+	mock_transaction "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/domain/transaction"
+	mock_usecase "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/usecase"
 )
 
 func mustNewTagName(s string) *model.TagName {

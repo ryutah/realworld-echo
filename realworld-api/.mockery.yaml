@@ -2,32 +2,32 @@ with-expecter: true
 packages:
   github.com/ryutah/realworld-echo/realworld-api/usecase:
     config:
-      dir: internal/mock/usecase
+      dir: internal/mock/gen/usecase
     interfaces:
       ErrorHandler:
       ErrorReporter:
       ErrorHandlerOption:
   github.com/ryutah/realworld-echo/realworld-api/domain/article/repository:
     config:
-      dir: internal/mock/article/repository
+      dir: internal/mock/gen/domain/article/repository
       all: true
   github.com/ryutah/realworld-echo/realworld-api/domain/auth/service:
     config:
-      dir: internal/mock/auth/service
+      dir: internal/mock/gen/domain/auth/service
       all: true
   github.com/ryutah/realworld-echo/realworld-api/domain/auth/repository:
     config:
-      dir: internal/mock/auth/repository
+      dir: internal/mock/gen/domain/auth/repository
       all: true
   github.com/ryutah/realworld-echo/realworld-api/domain/transaction:
     config:
-      dir: internal/mock/transaction
+      dir: internal/mock/gen/domain/transaction
       all: true
   github.com/ryutah/realworld-echo/realworld-api/infrastructure/psql/sqlc:
     config:
-      dir: internal/mock/psql/sqlc
+      dir: internal/mock/gen/infrastructure/psql/sqlc
       all: true
   github.com/ryutah/realworld-echo/realworld-api/infrastructure/psql/sqlc/gen:
     config:
-      dir: internal/mock/psql/sqlc/gen
+      dir: internal/mock/gen/infrastructure/psql/sqlc/gen
       all: true

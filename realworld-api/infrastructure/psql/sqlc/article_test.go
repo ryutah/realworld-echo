@@ -17,10 +17,10 @@ import (
 	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
 	. "github.com/ryutah/realworld-echo/realworld-api/infrastructure/psql/sqlc"
 	"github.com/ryutah/realworld-echo/realworld-api/infrastructure/psql/sqlc/gen"
-	mock_auth_repository "github.com/ryutah/realworld-echo/realworld-api/internal/mock/auth/repository"
-	mock_psql_sqlc "github.com/ryutah/realworld-echo/realworld-api/internal/mock/psql/sqlc"
-	mock_psql_sqlc_gen "github.com/ryutah/realworld-echo/realworld-api/internal/mock/psql/sqlc/gen"
-	mock_transaction "github.com/ryutah/realworld-echo/realworld-api/internal/mock/transaction"
+	mock_auth_repo "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/domain/auth/repository"
+	mock_transaction "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/domain/transaction"
+	mock_psql_sqlc "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/infrastructure/psql/sqlc"
+	mock_psql_sqlc_gen "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/infrastructure/psql/sqlc/gen"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -48,7 +48,7 @@ func TestArticle_GenerateID(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			dbManager := mock_psql_sqlc.NewMockDBManager(t)
 			transaction := mock_transaction.NewMockTransaction(t)
-			userRepo := mock_auth_repository.NewMockUser(t)
+			userRepo := mock_auth_repo.NewMockUser(t)
 			articleSelector := mock_psql_sqlc.NewMockRawSelector[gen.Article](t)
 
 			got, err := NewArtile(dbManager, transaction, userRepo, articleSelector).GenerateID(context.Background())
@@ -302,7 +302,7 @@ func TestArticle_Get(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			querier := mock_psql_sqlc_gen.NewMockQuerier(t)
 			manager := mock_psql_sqlc.NewMockDBManager(t)
-			userRepo := mock_auth_repository.NewMockUser(t)
+			userRepo := mock_auth_repo.NewMockUser(t)
 			transaction := mock_transaction.NewMockTransaction(t)
 			articleSelector := mock_psql_sqlc.NewMockRawSelector[gen.Article](t)
 
@@ -546,7 +546,7 @@ func TestArticle_Save(t *testing.T) {
 			dbManager := mock_psql_sqlc.NewMockDBManager(t)
 			querier := mock_psql_sqlc_gen.NewMockQuerier(t)
 			transaction := mock_transaction.NewMockTransaction(t)
-			userRepo := mock_auth_repository.NewMockUser(t)
+			userRepo := mock_auth_repo.NewMockUser(t)
 			artileSelector := mock_psql_sqlc.NewMockRawSelector[gen.Article](t)
 
 			if !tt.configs.transaction_run_should_be_skipped {
@@ -851,7 +851,7 @@ func TestArticle_Search(t *testing.T) {
 			executor := mock_psql_sqlc.NewMockContextExecutor(t)
 			transaction := mock_transaction.NewMockTransaction(t)
 			querier := mock_psql_sqlc_gen.NewMockQuerier(t)
-			userRepo := mock_auth_repository.NewMockUser(t)
+			userRepo := mock_auth_repo.NewMockUser(t)
 			articleSelector := mock_psql_sqlc.NewMockRawSelector[gen.Article](t)
 
 			dbManager.EXPECT().Executor(mock.Anything).Return(executor)

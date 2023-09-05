@@ -7,8 +7,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
-	mock_auth_service "github.com/ryutah/realworld-echo/realworld-api/internal/mock/auth/service"
-	mock_usecase "github.com/ryutah/realworld-echo/realworld-api/internal/mock/usecase"
+	mock_auth_service "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/domain/auth/service"
+	mock_usecase "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/usecase"
 	. "github.com/ryutah/realworld-echo/realworld-api/usecase"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"

@@ -11,9 +11,9 @@ import (
 	authmodel "github.com/ryutah/realworld-echo/realworld-api/domain/auth/model"
 	derrors "github.com/ryutah/realworld-echo/realworld-api/domain/errors"
 	"github.com/ryutah/realworld-echo/realworld-api/domain/premitive"
-	mock_repository "github.com/ryutah/realworld-echo/realworld-api/internal/mock/article/repository"
-	mock_auth_service "github.com/ryutah/realworld-echo/realworld-api/internal/mock/auth/service"
-	mock_usecase "github.com/ryutah/realworld-echo/realworld-api/internal/mock/usecase"
+	mock_article_repo "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/domain/article/repository"
+	mock_auth_service "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/domain/auth/service"
+	mock_usecase "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/usecase"
 	"github.com/ryutah/realworld-echo/realworld-api/usecase"
 	. "github.com/ryutah/realworld-echo/realworld-api/usecase/article"
 	"github.com/stretchr/testify/assert"
@@ -314,9 +314,9 @@ func Test_GetArticle_Get(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errorHandler := mock_usecase.NewMockErrorHandler[GetArticleResult](t)
-			article := mock_repository.NewMockArticle(t)
-			favorite := mock_repository.NewMockFavorite(t)
-			follow := mock_repository.NewMockFollow(t)
+			article := mock_article_repo.NewMockArticle(t)
+			favorite := mock_article_repo.NewMockFavorite(t)
+			follow := mock_article_repo.NewMockFollow(t)
 			authService := mock_auth_service.NewMockAuth(t)
 
 			if tt.configs.errorHandler_handle_should_call {

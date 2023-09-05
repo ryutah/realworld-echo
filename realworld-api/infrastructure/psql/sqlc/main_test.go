@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	mock_transaction "github.com/ryutah/realworld-echo/realworld-api/internal/mock/transaction"
+	mock_transaction "github.com/ryutah/realworld-echo/realworld-api/internal/mock/gen/domain/transaction"
 	"github.com/stretchr/testify/mock"
 )
 
