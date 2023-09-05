@@ -4,7 +4,6 @@ go 1.21
 
 require (
 	cloud.google.com/go/profiler v0.3.1
-	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.13.1
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator v0.37.1
 	github.com/Masterminds/squirrel v1.5.4
@@ -16,9 +15,9 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/jackc/pgx-gofrs-uuid v0.0.0-20230224015001-1d428863c2e2
 	github.com/jackc/pgx/v5 v5.4.3
-	github.com/jackc/pgxutil v0.0.0-20230722221055-3c9f5efec167
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/labstack/echo/v4 v4.10.2
+	github.com/pashagolub/pgxmock/v2 v2.12.0
 	github.com/samber/lo v1.38.1
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
@@ -83,7 +82,6 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
-	github.com/pashagolub/pgxmock/v2 v2.12.0 // indirect
 	github.com/paulmach/orb v0.10.0 // indirect
 	github.com/perimeterx/marshmallow v1.1.4 // indirect
 	github.com/pierrec/lz4/v4 v4.1.18 // indirect
