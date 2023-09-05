@@ -1,0 +1,34 @@
+@startuml
+
+title ビジネスユースケース図 - 貸出・返却:業務
+
+left to right direction
+
+actor 会員
+actor 図書館員
+
+agent 窓口
+
+usecase 窓口貸出
+usecase Web予約
+usecase 返却
+
+artifact 蔵書
+artifact 書架
+
+:図書館員: -- (窓口貸出)
+(窓口貸出) -- 窓口
+(窓口貸出) -- 蔵書
+(窓口貸出) -- 書架
+
+:会員: -- (Web予約)
+:図書館員: -- (Web予約)
+(Web予約) -- 蔵書
+(Web予約) -- 書架
+
+:図書館員: -- (返却)
+(返却) -- 窓口
+(返却) -- 蔵書
+(返却) -- 書架
+
+@enduml

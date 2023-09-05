@@ -1,0 +1,40 @@
+@startuml
+
+left to right direction
+' actor 人
+' node 会社
+' rectangle 組織・部署
+' artifact ビジネス要素
+
+actor 会員
+
+node 図書館 {
+  rectangle 窓口 {
+    actor 図書館員
+  }
+  rectangle 司書室 {
+    actor 司書
+  }
+  usecase 会員管理
+  usecase 貸出返却
+  usecase 蔵書管理
+  artifact 蔵書
+  artifact 書架
+}
+
+node 書籍店
+
+:会員: -- (会員管理)
+(会員管理) -- :図書館員:
+
+:会員: -- (貸出返却)
+(貸出返却) -- :図書館員:
+(貸出返却) -- 蔵書
+(貸出返却) -- 書架
+
+蔵書 -- (蔵書管理)
+書架 -- (蔵書管理)
+(蔵書管理) - :司書:
+(蔵書管理) -- 書籍店
+
+@enduml
