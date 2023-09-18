@@ -47,7 +47,7 @@ func NewExecuter(lc fx.Lifecycle, server *Server, traceInitializer xtrace.Initia
 	}
 
 	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
+		OnStart: func(context.Context) error {
 			go func() {
 				log.Printf("start server: %s", ls.Addr().String())
 				if err := srv.Serve(ls); err != nil && err != http.ErrServerClosed {

@@ -48,7 +48,7 @@ func errorHandlerExpectations[T any](t *testing.T, errorHandler *mock_usecase.Mo
 			lo.ToAnySlice(opt.HandleArgsOpts)...,
 		).
 		Run(
-			func(ctx context.Context, err error, opts ...usecase.ErrorHandlerOption) {
+			func(_ context.Context, err error, _ ...usecase.ErrorHandlerOption) {
 				assert.ErrorIs(t, err, opt.HandleArgsError, "error of ErrorHandler#Handle args")
 			},
 		).

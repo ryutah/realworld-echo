@@ -75,12 +75,12 @@ func Test_ListArticle_List(t *testing.T) {
 	}
 
 	var (
-		tag, tErr                                           = model.NewTagName("tag")
-		dummyError                                          = errors.New("dummy")
-		badrequestResult *usecase.Result[ListArticleResult] = usecase.Fail[ListArticleResult](
+		tag, tErr        = model.NewTagName("tag")
+		dummyError       = errors.New("dummy")
+		badrequestResult = usecase.Fail[ListArticleResult](
 			usecase.NewFailResult(usecase.FailTypeBadRequest, "fail"),
 		)
-		internalErrorResult *usecase.Result[ListArticleResult] = usecase.Fail[ListArticleResult](
+		internalErrorResult = usecase.Fail[ListArticleResult](
 			usecase.NewFailResult(usecase.FailTypeInternalError, "fail"),
 		)
 		slug1, _  = model.NewSlug(uuid.New().String())
