@@ -1,0 +1,55 @@
+import { Article } from "@/app/domain";
+
+export const articles = [
+  new Article({
+    slug: "how-to-train-your-dragon",
+    title: "How to train your dragon",
+    description: "Ever wonder how?",
+    body: "It takes a Jacobian",
+    tagList: ["dragons", "training"],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    favorited: false,
+    favoritesCount: 12,
+    author: {
+      userName: "jake",
+      bio: "I work at statefarm",
+      image: "https://i.stack.imgur.com/xHWG8.jpg",
+      following: false,
+    },
+  }),
+  new Article({
+    slug: "how-to-train-your-dragon2",
+    title: "How to train your dragon",
+    description: "Ever wonder how?",
+    body: "It takes a Jacobian",
+    tagList: ["dragons", "training"],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    favorited: true,
+    favoritesCount: 11111,
+    author: {
+      userName: "jake",
+      bio: "I work at statefarm",
+      image: "https://i.stack.imgur.com/xHWG8.jpg",
+      following: false,
+    },
+  }),
+  new Article({
+    slug: "how-to-train-your-dragon3",
+    title: "How to train your dragon",
+    description: "Ever wonder how?",
+    body: "It takes a Jacobian",
+    tagList: ["dragons", "training"],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    favorited: true,
+    favoritesCount: 12,
+    author: {
+      userName: "jake",
+      bio: "I work at statefarm",
+      image: "https://i.stack.imgur.com/xHWG8.jpg",
+      following: false,
+    },
+  }),
+];
