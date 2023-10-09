@@ -5,8 +5,9 @@
 ```console
 pnpm create next-app realworld-web
 pnpm add @mui/material @emotion/react @emotion/styled @mui/icons-material
-pnpm typesync
 pnpm dlx storybook@latest init
+pnpm add -D @storybook/testing-library @storybook/jest @storybook/addon-interactions
+pnpm typesync
 ```
 
 ## Referenses

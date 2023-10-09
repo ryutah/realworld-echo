@@ -16,8 +16,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <CssBaseline />
       <body className={inter.className}>
+        <CssBaseline />
         <MyAppBar />
         {children}
       </body>

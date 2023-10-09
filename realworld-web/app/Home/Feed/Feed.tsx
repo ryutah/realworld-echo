@@ -3,6 +3,16 @@ import { Article, ArticleProps } from "@/app/domain";
 import { Avatar, Paper, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2/Grid2";
 
+export const TestIds = {
+  Prefix: "home/feed",
+  Feed(slug: string) {
+    return `${TestIds.Prefix}/${slug}`;
+  },
+  Favorite(slug: string) {
+    return `${TestIds.Feed(slug)}/favorite`;
+  },
+};
+
 type Props = {
   article: ArticleProps;
 };
@@ -12,6 +22,7 @@ export default function Feed({ article }: Props) {
 
   return (
     <Paper
+      data-testid={TestIds.Feed(article.slug)}
       elevation={0}
       sx={{
         width: "100%",
@@ -35,7 +46,10 @@ export default function Feed({ article }: Props) {
           </Stack>
         </Grid>
         <Grid md={3} sx={{ textAlign: "right", width: "3rem" }}>
-          <LikeButton count={article.favoritesCount} />
+          <LikeButton
+            data-testid={TestIds.Favorite(article.slug)}
+            count={article.favoritesCount}
+          />
         </Grid>
 
         <Grid md={12}>
@@ -50,7 +64,7 @@ export default function Feed({ article }: Props) {
               </Grid>
               <Grid md={9} sx={{ textAlign: "right" }}>
                 {article.tagList.map((tag) => (
-                  <TagButton key={tag}>{tag}</TagButton>
+                  <TagButton key={tag} label={tag} variant="outlined" />
                 ))}
               </Grid>
             </Grid>
