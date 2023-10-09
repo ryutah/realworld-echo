@@ -1,4 +1,4 @@
-import { LikeButton, TagButton } from "@/app/components/Button";
+import { LikeButton, TagButton } from "@/app/common/components/Button";
 import { Article, ArticleProps } from "@/app/domain";
 import { Avatar, Paper, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2/Grid2";

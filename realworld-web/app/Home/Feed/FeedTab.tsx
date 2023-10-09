@@ -29,7 +29,13 @@ export default function FeedTab({ initTab, articles }: Props) {
           value={currentTab}
           onChange={(_, newValue) => setCurrentTab(newValue)}
         >
-          <Tab value={TabType.Global} label="Global Feed" />
+          <Tab
+            value={TabType.Global}
+            sx={{
+              textTransform: "none",
+            }}
+            label="Global Feed"
+          />
         </Tabs>
 
         <Box

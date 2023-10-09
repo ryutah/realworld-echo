@@ -2,7 +2,7 @@ import { Meta, StoryObj } from "@storybook/react";
 import { FollowButton } from "./FollowButton";
 
 const meta = {
-  title: "Components/Button/FollowButton",
+  title: "common/Components/Button/FollowButton",
   component: FollowButton,
   parameters: {
     layout: "centered",
@@ -16,5 +16,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: {},
+  args: {
+    user: "sample user name",
+  },
 };

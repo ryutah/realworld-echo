@@ -1,6 +1,5 @@
-import { TagButton } from "@/app/components/Button";
-import { Paper, Typography } from "@mui/material";
-import Grid from "@mui/material/Unstable_Grid2/Grid2";
+import { TagButton } from "@/app/common/components/Button";
+import { Paper, Stack, Typography } from "@mui/material";
 
 type Props = {
   tags: string[];
@@ -12,19 +11,17 @@ export default function Populartags({ tags }: Props) {
       elevation={0}
       sx={{
         backgroundColor: "whitesmoke",
-        maxWidth: "15rem",
+        maxWidth: 240,
       }}
     >
-      <Grid container p={2} spacing={1}>
-        <Grid md={12}>
-          <Typography variant="subtitle1">Popular Tags</Typography>
-        </Grid>
-        <Grid md={12} spacing={2}>
+      <Stack p={2} spacing={1}>
+        <Typography variant="subtitle1">Popular Tags</Typography>
+        <Stack direction="row" spacing={0.2} useFlexGap flexWrap="wrap">
           {tags.map((tag) => (
-            <TagButton key={tag} label={tag} sx={{ margin: 0.1 }} />
+            <TagButton key={tag} label={tag} clickable={true} />
           ))}
-        </Grid>
-      </Grid>
+        </Stack>
+      </Stack>
     </Paper>
   );
 }
