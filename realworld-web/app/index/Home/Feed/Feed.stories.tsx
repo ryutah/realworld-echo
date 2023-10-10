@@ -3,7 +3,7 @@ import { Meta, StoryObj } from "@storybook/react";
 import Feed from "./Feed";
 
 const meta = {
-  title: "Home/Feed/Feed",
+  title: "index/Home/Feed/Feed",
   component: Feed,
   parameters: {
     layout: "centered",

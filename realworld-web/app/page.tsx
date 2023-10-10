@@ -1,11 +1,10 @@
-import Header from "@/app/Home/Header";
-import Grid from "@mui/material/Unstable_Grid2/Grid2";
-import Populartags from "./Home/PopularTags/PopularTags";
-
 import { articles, tags } from "@/tests/testdata";
 import { Stack } from "@mui/material";
-import FeedTab, { TabType } from "./Home/Feed/FeedTab";
+import Grid from "@mui/material/Unstable_Grid2/Grid2";
 import Main from "./common/layouts/Main";
+import FeedTab, { TabType } from "./index/Home/Feed/FeedTab";
+import Header from "./index/Home/Header";
+import Populartags from "./index/Home/PopularTags/PopularTags";
 
 export default function Home() {
   return (

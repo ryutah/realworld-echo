@@ -1,11 +1,11 @@
-import { TestIds as FeedListTestIds } from "@/app/Home/Feed/FeedList";
 import Home from "@/app/page";
 import { expect } from "@storybook/jest";
 import { Meta, StoryObj } from "@storybook/react";
 import { within } from "@storybook/testing-library";
+import { TestIds as FeedListTestIds } from "./index/Home/Feed/FeedList";
 
 const meta = {
-  title: "Home/page",
+  title: "index/page",
   component: Home,
   parameters: {
     layout: "centered",

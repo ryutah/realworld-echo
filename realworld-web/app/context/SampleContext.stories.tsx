@@ -1,15 +1,15 @@
 import { Meta, StoryObj } from "@storybook/react";
-import MyAppBar from "./AppBar";
+import Sample from "./SampleContext";
 
 const meta = {
-  title: "common/components/AppBar",
-  component: MyAppBar,
+  title: "Sample/Sample",
+  component: Sample,
   parameters: {
     layout: "centered",
   },
   tags: ["autodocs"],
   argTypes: {},
-} satisfies Meta<typeof MyAppBar>;
+} satisfies Meta<typeof Sample>;
 
 export default meta;
 

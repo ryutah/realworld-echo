@@ -2,7 +2,7 @@ import { Meta, StoryObj } from "@storybook/react";
 import NarrowPaddingButton from "./NarrowPaddingButton";
 
 const meta = {
-  title: "common/Components/Button/NarrowPaddingButton",
+  title: "common/components/Button/NarrowPaddingButton",
   component: NarrowPaddingButton,
   parameters: {
     layout: "centered",

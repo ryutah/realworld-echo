@@ -2,7 +2,7 @@ import { Meta, StoryObj } from "@storybook/react";
 import Main from "./Main";
 
 const meta = {
-  title: "common/Layouts/Main",
+  title: "common/layouts/Main",
   component: Main,
   parameters: {
     layout: "centered",

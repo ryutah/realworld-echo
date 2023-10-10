@@ -1,4 +1,4 @@
-import MyAppBar from "@/app/components/AppBar";
+import MyAppBar from "@/app/common/components/AppBar";
 import { CssBaseline } from "@mui/material";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";

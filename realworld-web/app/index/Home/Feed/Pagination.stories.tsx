@@ -2,7 +2,7 @@ import { Meta, StoryObj } from "@storybook/react";
 import Pagination from "./Pagination";
 
 const meta = {
-  title: "Home/Feed/Pagination",
+  title: "index/Home/Feed/Pagination",
   component: Pagination,
   parameters: {
     layout: "centered",

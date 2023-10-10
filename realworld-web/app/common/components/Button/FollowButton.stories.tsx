@@ -2,7 +2,7 @@ import { Meta, StoryObj } from "@storybook/react";
 import { FollowButton } from "./FollowButton";
 
 const meta = {
-  title: "common/Components/Button/FollowButton",
+  title: "common/components/Button/FollowButton",
   component: FollowButton,
   parameters: {
     layout: "centered",

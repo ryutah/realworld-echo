@@ -3,7 +3,7 @@ import { Meta, StoryObj } from "@storybook/react";
 import PopularTags from "./PopularTags";
 
 const meta = {
-  title: "Home/PupularTags/PupularTags",
+  title: "index/Home/PupularTags/PupularTags",
   component: PopularTags,
   parameters: {
     layout: "centered",

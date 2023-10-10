@@ -2,7 +2,7 @@ import { Meta, StoryObj } from "@storybook/react";
 import { TagButton } from "./TagButton";
 
 const meta = {
-  title: "common/Components/Button/TagButton",
+  title: "common/components/Buttcn/TagButton",
   component: TagButton,
   parameters: {
     layout: "centered",
