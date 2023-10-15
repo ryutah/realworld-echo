@@ -1,4 +1,4 @@
-import { TagButton } from "@/app/common/components/Button";
+import { TagButton } from "@/app/components/Button";
 import { Paper, Stack, Typography } from "@mui/material";
 
 type Props = {

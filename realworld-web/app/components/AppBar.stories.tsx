@@ -2,7 +2,7 @@ import { Meta, StoryObj } from "@storybook/react";
 import MyAppBar from "./AppBar";
 
 const meta = {
-  title: "common/components/AppBar",
+  title: "components/AppBar",
   component: MyAppBar,
   parameters: {
     layout: "centered",

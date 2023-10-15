@@ -1,3 +1,5 @@
+"use client";
+
 import { ArticleProps } from "@/app/domain";
 import { Box, Stack, Tab, Tabs } from "@mui/material";
 import { useState } from "react";
@@ -9,7 +11,7 @@ export const TestIds = {
   GlobalTab: "home/feed-tab/global-tab",
 };
 
-export const TabType = {
+const TabType = {
   Global: "global",
 } as const;
 export type TabType = (typeof TabType)[keyof typeof TabType];

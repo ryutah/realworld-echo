@@ -1,5 +1,5 @@
-import { TagButton } from "@/app/common/components/Button";
-import Main from "@/app/common/layouts/Main";
+import { TagButton } from "@/app/components/Button";
+import Main from "@/app/components/Main";
 import { Article, ArticleProps } from "@/app/domain";
 import { Box, Divider, Stack, Typography } from "@mui/material";
 import Meta from "./Meta";

@@ -1,10 +1,10 @@
 import { articles, tags } from "@/tests/testdata";
 import { Stack } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2/Grid2";
-import Main from "./common/layouts/Main";
-import FeedTab, { TabType } from "./index/Home/Feed/FeedTab";
-import Header from "./index/Home/Header";
-import Populartags from "./index/Home/PopularTags/PopularTags";
+import Main from "@/app/components/Main";
+import FeedTab from "./Home/Feed/FeedTab";
+import Header from "./Home/Header";
+import Populartags from "./Home/PopularTags/PopularTags";
 
 export default function Home() {
   return (
@@ -13,7 +13,7 @@ export default function Home() {
       <Main>
         <Grid container>
           <Grid md={9}>
-            <FeedTab initTab={TabType.Global} articles={articles} />
+            <FeedTab initTab="global" articles={articles} />
           </Grid>
           <Grid md={3} sx={{ alignItems: "right" }}>
             <Populartags tags={tags} />

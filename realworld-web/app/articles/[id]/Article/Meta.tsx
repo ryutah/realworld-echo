@@ -1,4 +1,4 @@
-import { FollowButton, LikeButton } from "@/app/common/components/Button";
+import { FollowButton, LikeButton } from "@/app/components/Button";
 import { Article, ArticleProps } from "@/app/domain";
 import { Avatar, Stack, Typography } from "@mui/material";
 

@@ -1,7 +1,7 @@
-import { Article } from "@/app/domain";
+import { ArticleProps } from "@/app/domain";
 
-export const articles = [
-  new Article({
+export const articles: ArticleProps[] = [
+  {
     slug: "how-to-train-your-dragon",
     title: "How to train your dragon",
     description: "Ever wonder how?",
@@ -17,8 +17,8 @@ export const articles = [
       image: "https://i.stack.imgur.com/xHWG8.jpg",
       following: false,
     },
-  }),
-  new Article({
+  },
+  {
     slug: "how-to-train-your-dragon2",
     title: "How to train your dragon",
     description: "Ever wonder how?",
@@ -34,8 +34,8 @@ export const articles = [
       image: "https://i.stack.imgur.com/xHWG8.jpg",
       following: false,
     },
-  }),
-  new Article({
+  },
+  {
     slug: "how-to-train-your-dragon3",
     title: "How to train your dragon",
     description: "Ever wonder how?",
@@ -51,5 +51,5 @@ export const articles = [
       image: "https://i.stack.imgur.com/xHWG8.jpg",
       following: false,
     },
-  }),
+  },
 ];

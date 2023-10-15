@@ -1,12 +1,12 @@
-import Home from "@/app/page";
+import Page from "./page";
 import { expect } from "@storybook/jest";
 import { Meta, StoryObj } from "@storybook/react";
 import { within } from "@storybook/testing-library";
-import { TestIds as FeedListTestIds } from "./index/Home/Feed/FeedList";
+import { TestIds as FeedListTestIds } from "./Home/Feed/FeedList";
 
 const meta = {
   title: "index/page",
-  component: Home,
+  component: Page,
   parameters: {
     layout: "centered",
     nextjs: {
@@ -19,7 +19,7 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {},
-} satisfies Meta<typeof Home>;
+} satisfies Meta<typeof Page>;
 
 export default meta;
 

@@ -1,4 +1,4 @@
-import Main from "@/app/common/layouts/Main";
+import Main from "@/app/components/Main";
 import { ArticleProps } from "@/app/domain";
 import { Box, Stack, Typography } from "@mui/material";
 import Meta from "./Meta";

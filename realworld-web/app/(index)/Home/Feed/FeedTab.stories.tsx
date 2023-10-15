@@ -1,15 +1,16 @@
+import { articles } from "@/tests/testdata";
 import { Meta, StoryObj } from "@storybook/react";
-import { FollowButton } from "./FollowButton";
+import FeedTab  from "./FeedTab";
 
 const meta = {
-  title: "common/components/Button/FollowButton",
-  component: FollowButton,
+  title: "index/Home/Feed/FeedTab",
+  component: FeedTab,
   parameters: {
     layout: "centered",
   },
   tags: ["autodocs"],
   argTypes: {},
-} satisfies Meta<typeof FollowButton>;
+} satisfies Meta<typeof FeedTab>;
 
 export default meta;
 
@@ -17,6 +18,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    user: "sample user name",
+    articles: articles,
+    initTab: "global",
   },
 };
