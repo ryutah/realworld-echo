@@ -1,8 +1,8 @@
 import { Meta, StoryObj } from "@storybook/react";
-import Header from "./Header";
+import Header from "./index";
 
 const meta = {
-  title: "index/Home/Header",
+  title: "index/Header",
   component: Header,
   parameters: {
     layout: "centered",

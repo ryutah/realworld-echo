@@ -1,22 +1,26 @@
-import { ArticleProps } from "@/app/domain";
-import { articles } from "@/tests/testdata";
+import { Stack } from "@mui/material";
+import Grid from "@mui/material/Unstable_Grid2/Grid2";
 import { ReactNode } from "react";
-import { ArticlesProvider } from "./store";
+import Main from "../components/Main";
 
-export default async function ArticleLayout({
-  children,
-}: {
+type Props = {
   children: ReactNode;
-}) {
-  const articles = await getArticles();
+  feed: ReactNode;
+  populartags: ReactNode;
+};
 
-  return <ArticlesProvider globalFeeds={articles}>{children}</ArticlesProvider>;
-}
-
-async function getArticles(): Promise<ArticleProps[]> {
-  return await new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(articles);
-    }, 500);
-  });
+export default function ArticleLayout(props: Props) {
+  return (
+    <Stack>
+      {props.children}
+      <Main>
+        <Grid container>
+          <Grid md={9}>{props.feed}</Grid>
+          <Grid md={3} sx={{ alignItems: "right" }}>
+            {props.populartags}
+          </Grid>
+        </Grid>
+      </Main>
+    </Stack>
+  );
 }

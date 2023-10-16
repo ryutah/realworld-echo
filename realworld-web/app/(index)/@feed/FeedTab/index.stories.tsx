@@ -1,10 +1,10 @@
 import { articles } from "@/tests/testdata";
 import { Meta, StoryObj } from "@storybook/react";
-import { ArticlesProvider } from "../../store";
-import FeedTab from "./FeedTab";
+import { ArticlesProvider } from "../store";
+import FeedTab from "./index";
 
 const meta = {
-  title: "index/Home/Feed/FeedTab",
+  title: "index/@feed/FeedTab",
   component: FeedTab,
   parameters: {
     layout: "centered",

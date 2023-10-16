@@ -1,9 +1,9 @@
 import { tags } from "@/tests/testdata";
 import { Meta, StoryObj } from "@storybook/react";
-import PopularTags from "./PopularTags";
+import PopularTags from "./index";
 
 const meta = {
-  title: "index/Home/PupularTags/PupularTags",
+  title: "index/@pupulartags/PupularTags",
   component: PopularTags,
   parameters: {
     layout: "centered",

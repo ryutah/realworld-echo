@@ -2,7 +2,7 @@
 
 import { Box, Stack, Tab, Tabs } from "@mui/material";
 import { useState } from "react";
-import { useArticles } from "../../store";
+import { useArticles } from "../store";
 import FeedList from "./FeedList";
 import Pagination from "./Pagination";
 

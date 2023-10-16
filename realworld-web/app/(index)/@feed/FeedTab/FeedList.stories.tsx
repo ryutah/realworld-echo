@@ -1,23 +1,16 @@
 import { articles } from "@/tests/testdata";
 import { Meta, StoryObj } from "@storybook/react";
-import Feed from "./Feed";
+import FeedList from "./FeedList";
 
 const meta = {
-  title: "index/Home/Feed/Feed",
-  component: Feed,
+  title: "index/@feed/FeedTab/FeedList",
+  component: FeedList,
   parameters: {
     layout: "centered",
   },
   tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <div>
-        <Story />
-      </div>
-    ),
-  ],
   argTypes: {},
-} satisfies Meta<typeof Feed>;
+} satisfies Meta<typeof FeedList>;
 
 export default meta;
 
@@ -25,6 +18,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    article: articles[0],
+    articles: articles,
   },
 };
