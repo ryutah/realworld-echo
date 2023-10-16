@@ -1,8 +1,8 @@
 "use client";
 
-import { ArticleProps } from "@/app/domain";
 import { Box, Stack, Tab, Tabs } from "@mui/material";
 import { useState } from "react";
+import { useArticles } from "../../store";
 import FeedList from "./FeedList";
 import Pagination from "./Pagination";
 
@@ -18,10 +18,10 @@ export type TabType = (typeof TabType)[keyof typeof TabType];
 
 type Props = {
   initTab: TabType;
-  articles: ArticleProps[];
 };
 
-export default function FeedTab({ initTab, articles }: Props) {
+export default function FeedTab({ initTab }: Props) {
+  const store = useArticles();
   const [currentTab, setCurrentTab] = useState(initTab);
 
   return (
@@ -44,10 +44,10 @@ export default function FeedTab({ initTab, articles }: Props) {
           data-testid={TestIds.GlobalTab}
           hidden={currentTab !== TabType.Global}
         >
-          <FeedList articles={articles} />
+          <FeedList articles={store.articles.globalFeeds} />
         </Box>
         <Box>
-          <Pagination count={articles.length} />
+          <Pagination count={store.articles.globalFeeds.length} />
         </Box>
       </Stack>
     </Box>

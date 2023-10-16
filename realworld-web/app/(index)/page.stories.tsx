@@ -1,8 +1,10 @@
-import Page from "./page";
+import { articles } from "@/tests/testdata";
 import { expect } from "@storybook/jest";
 import { Meta, StoryObj } from "@storybook/react";
 import { within } from "@storybook/testing-library";
 import { TestIds as FeedListTestIds } from "./Home/Feed/FeedList";
+import Page from "./page";
+import { ArticlesProvider } from "./store";
 
 const meta = {
   title: "index/page",
@@ -19,6 +21,13 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {},
+  decorators: [
+    (Stroy) => (
+      <ArticlesProvider globalFeeds={articles}>
+        <Stroy />
+      </ArticlesProvider>
+    ),
+  ],
 } satisfies Meta<typeof Page>;
 
 export default meta;

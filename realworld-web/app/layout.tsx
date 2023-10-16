@@ -1,7 +1,7 @@
 import MyAppBar from "@/app/components/AppBar";
-import { CssBaseline } from "@mui/material";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import ThemeRegistry from "./components/ThemeRegistry";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,9 +17,10 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className={inter.className}>
-        <CssBaseline />
-        <MyAppBar />
-        {children}
+        <ThemeRegistry options={{ key: "mui" }}>
+          <MyAppBar />
+          {children}
+        </ThemeRegistry>
       </body>
     </html>
   );

@@ -1,10 +1,5 @@
 import { Profile } from "@/app/domain/profile";
-
-// see: https://stackoverflow.com/questions/55479658/how-to-create-a-type-excluding-instance-methods-from-a-class-in-typescript
-type NonFunctionPropertyNames<T> = {
-  [K in keyof T]: T[K] extends Function ? never : K;
-}[keyof T];
-type NonFunctionProperties<T> = Pick<T, NonFunctionPropertyNames<T>>;
+import { NonFunctionProperties } from "@/app/lib/types";
 
 export type ArticleProps = NonFunctionProperties<Article>;
 

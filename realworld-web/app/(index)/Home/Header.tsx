@@ -1,13 +1,17 @@
-import { Box, Typography } from "@mui/material";
+"use client";
+
+import { Box, Typography, useTheme } from "@mui/material";
 
 export default function Header() {
+  const theme = useTheme();
+
   return (
     <Box
       sx={{
         textAlign: "center",
-        background: "#5CB85C",
+        background: theme.palette.primary.main,
         width: "100%",
-        color: "white",
+        color: theme.palette.secondary.contrastText,
       }}
       p={5}
     >
