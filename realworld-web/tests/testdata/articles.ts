@@ -1,0 +1,55 @@
+import { ArticleProps } from "@/app/domain";
+
+export const articles: ArticleProps[] = [
+  {
+    slug: "how-to-train-your-dragon",
+    title: "How to train your dragon",
+    description: "Ever wonder how?",
+    body: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    tagList: ["dragons", "training"],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    favorited: false,
+    favoritesCount: 12,
+    author: {
+      userName: "jake",
+      bio: "I work at statefarm",
+      image: "https://i.stack.imgur.com/xHWG8.jpg",
+      following: false,
+    },
+  },
+  {
+    slug: "how-to-train-your-dragon2",
+    title: "How to train your dragon",
+    description: "Ever wonder how?",
+    body: "It takes a Jacobian",
+    tagList: ["dragons", "training"],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    favorited: true,
+    favoritesCount: 11111,
+    author: {
+      userName: "jake",
+      bio: "I work at statefarm",
+      image: "https://i.stack.imgur.com/xHWG8.jpg",
+      following: false,
+    },
+  },
+  {
+    slug: "how-to-train-your-dragon3",
+    title: "How to train your dragon",
+    description: "Ever wonder how?",
+    body: "It takes a Jacobian",
+    tagList: ["dragons", "training"],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    favorited: true,
+    favoritesCount: 12,
+    author: {
+      userName: "jake",
+      bio: "I work at statefarm",
+      image: "https://i.stack.imgur.com/xHWG8.jpg",
+      following: false,
+    },
+  },
+];

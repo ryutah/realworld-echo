@@ -1,11 +1,13 @@
 import type { StorybookConfig } from "@storybook/nextjs";
-import path from "path";
 
 const config: StorybookConfig = {
-  stories: ["../stories/**/*.mdx", "../stories/**/*.stories.@(js|jsx|ts|tsx)"],
+  stories: ["../**/*.mdx", "../**/*.stories.@(js|jsx|mjs|ts|tsx)"],
   addons: [
     "@storybook/addon-links",
     "@storybook/addon-essentials",
+    "@storybook/addon-onboarding",
+    "@storybook/addon-interactions",
+    "@storybook/addon-jest",
     "@storybook/addon-interactions",
   ],
   framework: {
@@ -18,7 +20,7 @@ const config: StorybookConfig = {
   webpackFinal: async (config) => {
     config.resolve!.alias = {
       ...config.resolve!.alias,
-      "@": path.resolve(__dirname, "../src"),
+      "@": `${__dirname}/..`,
     };
     return config;
   },
