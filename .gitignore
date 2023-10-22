@@ -5,6 +5,7 @@
 .tool-versions
 .vim/
 *.log
+.firebaserc
 
 # Swap
 [._]*.s[a-v][a-z]
@@ -299,5 +300,3 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-
-
