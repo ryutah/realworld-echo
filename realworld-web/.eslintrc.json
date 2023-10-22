@@ -1,6 +1,4 @@
 {
-  "extends": [
-    "next/core-web-vitals",
-    "plugin:storybook/recommended"
-  ]
+  "ignorePatterns": ["/app/lib/oapi/generated/**/*.ts"],
+  "extends": ["next/core-web-vitals", "plugin:storybook/recommended"]
 }
